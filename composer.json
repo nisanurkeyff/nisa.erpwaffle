@@ -1,0 +1,12 @@
+{
+    "require": {
+        "phpmailer/phpmailer": "^6.9",
+        "claviska/simpleimage": "^4.2",
+        "box/spout": "^3.3",
+        "phpoffice/phpspreadsheet": "^3.8",
+        "setasign/fpdf": "^1.8",
+        "mpdf/mpdf": "^8.2",
+        "endroid/qr-code": "^6.0",
+        "khanamiryan/qrcode-detector-decoder": "^2.0"
+    }
+}

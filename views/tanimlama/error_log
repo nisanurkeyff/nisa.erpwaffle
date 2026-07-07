@@ -1,0 +1,35 @@
+[25-May-2025 16:30:48 Europe/Istanbul] PHP Fatal error:  Uncaught Error: Class "CariController" not found in /home/u8163476/menuyonetim.kahveduragi.com.tr/class/config.php:61
+Stack trace:
+#0 /home/u8163476/menuyonetim.kahveduragi.com.tr/views/tanimlama/alerjen_listesi.php(2): require_once()
+#1 {main}
+  thrown in /home/u8163476/menuyonetim.kahveduragi.com.tr/class/config.php on line 61
+[25-May-2025 16:30:49 Europe/Istanbul] PHP Fatal error:  Uncaught Error: Class "CariController" not found in /home/u8163476/menuyonetim.kahveduragi.com.tr/class/config.php:61
+Stack trace:
+#0 /home/u8163476/menuyonetim.kahveduragi.com.tr/views/tanimlama/alerjen_listesi.php(2): require_once()
+#1 {main}
+  thrown in /home/u8163476/menuyonetim.kahveduragi.com.tr/class/config.php on line 61
+[25-May-2025 16:31:13 Europe/Istanbul] PHP Fatal error:  Uncaught Error: Class "CariController" not found in /home/u8163476/menuyonetim.kahveduragi.com.tr/class/config.php:68
+Stack trace:
+#0 /home/u8163476/menuyonetim.kahveduragi.com.tr/views/tanimlama/alerjen_listesi.php(2): require_once()
+#1 {main}
+  thrown in /home/u8163476/menuyonetim.kahveduragi.com.tr/class/config.php on line 68
+[25-May-2025 16:31:14 Europe/Istanbul] PHP Fatal error:  Uncaught Error: Class "CariController" not found in /home/u8163476/menuyonetim.kahveduragi.com.tr/class/config.php:68
+Stack trace:
+#0 /home/u8163476/menuyonetim.kahveduragi.com.tr/views/tanimlama/alerjen_listesi.php(2): require_once()
+#1 {main}
+  thrown in /home/u8163476/menuyonetim.kahveduragi.com.tr/class/config.php on line 68
+[25-May-2025 16:31:14 Europe/Istanbul] PHP Fatal error:  Uncaught Error: Class "CariController" not found in /home/u8163476/menuyonetim.kahveduragi.com.tr/class/config.php:68
+Stack trace:
+#0 /home/u8163476/menuyonetim.kahveduragi.com.tr/views/tanimlama/alerjen_listesi.php(2): require_once()
+#1 {main}
+  thrown in /home/u8163476/menuyonetim.kahveduragi.com.tr/class/config.php on line 68
+[25-May-2025 16:31:14 Europe/Istanbul] PHP Fatal error:  Uncaught Error: Class "CariController" not found in /home/u8163476/menuyonetim.kahveduragi.com.tr/class/config.php:68
+Stack trace:
+#0 /home/u8163476/menuyonetim.kahveduragi.com.tr/views/tanimlama/alerjen_listesi.php(2): require_once()
+#1 {main}
+  thrown in /home/u8163476/menuyonetim.kahveduragi.com.tr/class/config.php on line 68
+[25-May-2025 16:31:14 Europe/Istanbul] PHP Fatal error:  Uncaught Error: Class "CariController" not found in /home/u8163476/menuyonetim.kahveduragi.com.tr/class/config.php:68
+Stack trace:
+#0 /home/u8163476/menuyonetim.kahveduragi.com.tr/views/tanimlama/alerjen_listesi.php(2): require_once()
+#1 {main}
+  thrown in /home/u8163476/menuyonetim.kahveduragi.com.tr/class/config.php on line 68

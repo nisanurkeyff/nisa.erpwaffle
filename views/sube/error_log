@@ -1,0 +1,5 @@
+[26-May-2025 12:06:24 Europe/Istanbul] PHP Fatal error:  Uncaught Error: Failed opening required '/home/u8163476/menuyonetim.kahveduragi.com.tr/class/theme.php' (include_path='.:/opt/alt/php82/usr/share/pear:/opt/alt/php82/usr/share/php:/usr/share/pear:/usr/share/php') in /home/u8163476/menuyonetim.kahveduragi.com.tr/class/config.php:10
+Stack trace:
+#0 /home/u8163476/menuyonetim.kahveduragi.com.tr/views/sube/sube_listesi.php(2): require_once()
+#1 {main}
+  thrown in /home/u8163476/menuyonetim.kahveduragi.com.tr/class/config.php on line 10

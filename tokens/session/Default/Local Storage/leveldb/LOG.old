@@ -1,0 +1,12 @@
+2024/12/15-11:32:18.374 1698 Reusing MANIFEST C:\xampp\htdocs\sorgu\tokens\session\Default\Local Storage\leveldb/MANIFEST-000001
+2024/12/15-11:32:18.380 1698 Recovering log #4
+2024/12/15-11:32:18.383 1698 Reusing old log C:\xampp\htdocs\sorgu\tokens\session\Default\Local Storage\leveldb/000004.log 
+2024/12/15-12:04:20.766 1698 Level-0 table #8: started
+2024/12/15-12:04:20.771 1698 Level-0 table #8: 12434 bytes OK
+2024/12/15-12:04:20.778 1698 Delete type=0 #4
+2024/12/15-13:48:20.765 29dc Level-0 table #10: started
+2024/12/15-13:48:20.773 29dc Level-0 table #10: 10122 bytes OK
+2024/12/15-13:48:20.778 29dc Delete type=0 #7
+2024/12/15-14:34:20.764 29dc Level-0 table #12: started
+2024/12/15-14:34:20.770 29dc Level-0 table #12: 11291 bytes OK
+2024/12/15-14:34:20.776 29dc Delete type=0 #9

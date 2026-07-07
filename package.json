@@ -1,0 +1,26 @@
+{
+  "dependencies": {
+    "@wppconnect-team/wppconnect": "^1.35.1",
+    "body-parser": "^1.20.3",
+    "chromedriver": "^131.0.3",
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "fs": "^0.0.1-security",
+    "jspdf": "^3.0.0",
+    "puppeteer": "^23.10.4",
+    "puppeteer-core": "^23.10.4",
+    "puppeteer-extra": "^3.3.6",
+    "puppeteer-extra-plugin-stealth": "^2.11.2",
+    "selenium-webdriver": "^4.27.0"
+  },
+  "scripts": {
+    "start": "node sahibinden2.js"
+  },
+  "name": "sorgu",
+  "version": "1.0.0",
+  "main": "chrome.js",
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": ""
+}

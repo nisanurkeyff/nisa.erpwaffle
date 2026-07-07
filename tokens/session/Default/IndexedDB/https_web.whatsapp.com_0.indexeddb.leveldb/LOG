@@ -1,0 +1,65 @@
+2024/12/15-15:08:19.820 387c Reusing MANIFEST C:\xampp\htdocs\sorgu\tokens\session\Default\IndexedDB\https_web.whatsapp.com_0.indexeddb.leveldb/MANIFEST-000001
+2024/12/15-15:08:19.821 387c Recovering log #1978
+2024/12/15-15:08:19.836 387c Reusing old log C:\xampp\htdocs\sorgu\tokens\session\Default\IndexedDB\https_web.whatsapp.com_0.indexeddb.leveldb/001978.log 
+2024/12/15-15:08:20.838 3fc8 Level-0 table #2021: started
+2024/12/15-15:08:20.849 3fc8 Level-0 table #2021: 735022 bytes OK
+2024/12/15-15:08:20.852 3fc8 Delete type=0 #1978
+2024/12/15-15:08:20.852 290 Manual compaction at level-0 from '\x00\x1f\x00\x00\x00' @ 72057594037927935 : 1 .. '\x00 \x00\x00\x00' @ 0 : 0; will stop at '\x00\x1f\x00\x00\x05' @ 6328046 : 1
+2024/12/15-15:08:20.853 290 Compacting 1@0 + 0@1 files
+2024/12/15-15:08:20.864 290 Generated table #2022@0: 8524 keys, 250107 bytes
+2024/12/15-15:08:20.869 290 Generated table #2023@0: 581 keys, 37065 bytes
+2024/12/15-15:08:20.873 290 Generated table #2024@0: 732 keys, 20961 bytes
+2024/12/15-15:08:20.876 290 Generated table #2025@0: 127 keys, 2989 bytes
+2024/12/15-15:08:20.876 290 Compacted 1@0 + 0@1 files => 311122 bytes
+2024/12/15-15:08:20.879 290 compacted to: files[ 0 4 38 0 0 0 0 ]
+2024/12/15-15:08:20.879 290 Manual compaction at level-0 from '\x00\x1f\x00\x00\x05' @ 6328046 : 1 .. '\x00 \x00\x00\x00' @ 0 : 0; will stop at (end)
+2024/12/15-15:08:20.879 290 Compacting 1@1 + 10@2 files
+2024/12/15-15:08:20.907 290 Generated table #2026@1: 3817 keys, 2146411 bytes
+2024/12/15-15:08:20.930 290 Generated table #2027@1: 4438 keys, 2150490 bytes
+2024/12/15-15:08:20.951 290 Generated table #2028@1: 4960 keys, 2152438 bytes
+2024/12/15-15:08:20.995 290 Generated table #2029@1: 51163 keys, 2205274 bytes
+2024/12/15-15:08:21.043 290 Generated table #2030@1: 37722 keys, 2249620 bytes
+2024/12/15-15:08:21.090 290 Generated table #2031@1: 36724 keys, 2250064 bytes
+2024/12/15-15:08:21.131 290 Generated table #2032@1: 38463 keys, 2242253 bytes
+2024/12/15-15:08:21.180 290 Generated table #2033@1: 37967 keys, 2242208 bytes
+2024/12/15-15:08:21.212 290 Generated table #2034@1: 20026 keys, 2165898 bytes
+2024/12/15-15:08:21.217 290 Generated table #2035@1: 278 keys, 111615 bytes
+2024/12/15-15:08:21.217 290 Compacted 1@1 + 10@2 files => 19916271 bytes
+2024/12/15-15:08:21.220 290 compacted to: files[ 0 3 38 0 0 0 0 ]
+2024/12/15-15:08:21.220 290 Delete type=2 #1995
+2024/12/15-15:08:21.220 290 Delete type=2 #2009
+2024/12/15-15:08:21.220 290 Delete type=2 #2010
+2024/12/15-15:08:21.220 290 Delete type=2 #2011
+2024/12/15-15:08:21.220 290 Delete type=2 #2012
+2024/12/15-15:08:21.220 290 Delete type=2 #2013
+2024/12/15-15:08:21.220 290 Delete type=2 #2014
+2024/12/15-15:08:21.220 290 Delete type=2 #2015
+2024/12/15-15:08:21.221 290 Delete type=2 #2016
+2024/12/15-15:08:21.221 290 Delete type=2 #2017
+2024/12/15-15:08:21.221 290 Delete type=2 #2021
+2024/12/15-15:08:21.221 290 Delete type=2 #2023
+2024/12/15-15:08:21.283 387c Compacting 1@1 + 10@2 files
+2024/12/15-15:08:21.326 387c Generated table #2036@1: 53360 keys, 2262516 bytes
+2024/12/15-15:08:21.356 387c Generated table #2037@1: 2730 keys, 2149371 bytes
+2024/12/15-15:08:21.377 387c Generated table #2038@1: 3980 keys, 2150284 bytes
+2024/12/15-15:08:21.397 387c Generated table #2039@1: 4442 keys, 2151718 bytes
+2024/12/15-15:08:21.417 387c Generated table #2040@1: 4505 keys, 2153232 bytes
+2024/12/15-15:08:21.437 387c Generated table #2041@1: 4469 keys, 2153344 bytes
+2024/12/15-15:08:21.456 387c Generated table #2042@1: 4531 keys, 2153374 bytes
+2024/12/15-15:08:21.477 387c Generated table #2043@1: 4426 keys, 2151824 bytes
+2024/12/15-15:08:21.497 387c Generated table #2044@1: 3263 keys, 2144412 bytes
+2024/12/15-15:08:21.517 387c Generated table #2045@1: 3863 keys, 2147401 bytes
+2024/12/15-15:08:21.521 387c Generated table #2046@1: 106 keys, 76766 bytes
+2024/12/15-15:08:21.521 387c Compacted 1@1 + 10@2 files => 21694242 bytes
+2024/12/15-15:08:21.524 387c compacted to: files[ 0 2 39 0 0 0 0 ]
+2024/12/15-15:08:21.524 387c Delete type=2 #1985
+2024/12/15-15:08:21.524 387c Delete type=2 #1986
+2024/12/15-15:08:21.524 387c Delete type=2 #1987
+2024/12/15-15:08:21.524 387c Delete type=2 #1988
+2024/12/15-15:08:21.524 387c Delete type=2 #1989
+2024/12/15-15:08:21.524 387c Delete type=2 #1990
+2024/12/15-15:08:21.524 387c Delete type=2 #1991
+2024/12/15-15:08:21.524 387c Delete type=2 #1992
+2024/12/15-15:08:21.524 387c Delete type=2 #1993
+2024/12/15-15:08:21.524 387c Delete type=2 #1994
+2024/12/15-15:08:21.524 387c Delete type=2 #2022

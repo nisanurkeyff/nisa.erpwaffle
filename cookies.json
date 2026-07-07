@@ -1,0 +1,60 @@
+{
+  "cookies": [
+    {
+      "name": "ps_l",
+      "value": "1",
+      "domain": ".whatsapp.com",
+      "path": "/",
+      "expires": "Tue Jan 13 2026 20:48:16 GMT+0300",
+      "secure": true,
+      "httpOnly": true,
+      "sameSite": "None"
+    },
+    {
+      "name": "ps_n",
+      "value": "1",
+      "domain": ".whatsapp.com",
+      "path": "/",
+      "expires": "Tue Jan 13 2026 20:48:16 GMT+0300",
+      "secure": true,
+      "httpOnly": true,
+      "sameSite": "None"
+    },
+    {
+      "name": "wa_csrf",
+      "value": "MFBxcein6urBb6fKU7NA2i",
+      "domain": ".whatsapp.com",
+      "path": "/",
+      "expires": "Fri Dec 12 2025 02:05:30 GMT+0300",
+      "secure": true,
+      "sameSite": "None"
+    },
+    {
+      "name": "wa_lang_pref",
+      "value": "tr",
+      "domain": ".whatsapp.com",
+      "path": "/",
+      "expires": "Wed Dec 18 2024",
+      "secure": true,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "wa_ul",
+      "value": "8937047d-91f5-4849-8161-684071d8b9d8",
+      "domain": ".web.whatsapp.com",
+      "path": "/",
+      "expires": "Sat Jan 11 2025 16:30:57 GMT+0300",
+      "secure": true,
+      "sameSite": "None"
+    },
+    {
+      "name": "wa_web_lang_pref",
+      "value": "tr_TR",
+      "domain": ".web.whatsapp.com",
+      "path": "/",
+      "expires": "Thu Jan 09 2025",
+      "secure": true,
+      "sameSite": "None"
+    }
+  ]
+}
