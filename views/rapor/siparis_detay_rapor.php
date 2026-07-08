@@ -9,16 +9,15 @@
     $_REQUEST['kategori_id'] = 1;
 
     $excel = new excelSayfasi();
-    $excel->sutunEkle("Sipariş No","ID","");
-    $excel->sutunEkle("İsim","ISIM","");
-    $excel->sutunEkle("Telefon","TELEFON","");
-    $excel->sutunEkle("Mail","MAIL","");
-    $excel->sutunEkle("Firma","CARI","");
-    $excel->sutunEkle("Tutar","TUTAR","");
-    $excel->sutunEkle("Ürün Sayısı","URUN_SAYISI","");
-    $excel->sutunEkle("Ödeme Durumu","ODEME_TEXT","");
-    $excel->sutunEkle("Süreç","SUREC","");
-    $excel->sutunEkle("Açıklama","ACIKLAMA","");
+    $excel->sutunEkle("Sipariş No","SIPARIS_NO","");
+    $excel->sutunEkle("Ürün","URUN","");
+    $excel->sutunEkle("Kaynak","KAYNAK","");
+    $excel->sutunEkle("Müşteri","MUSTERI","");
+    $excel->sutunEkle("Birim Fiyat","FIYAT","");
+    $excel->sutunEkle("Adet","ADET","");
+    $excel->sutunEkle("Toplam Tutar","TUTAR","");
+    $excel->sutunEkle("Sipariş Tarihi","SIPARIS_TARIH","");
+    $excel->sutunEkle("Hazırlanma Süresi (Dakika)","HAZIRLANMA_SURESI","");
     $excelOut = $excel->excel();
     
     $result             = $cRapor->getSiparisDetaylar($_REQUEST);
@@ -142,49 +141,27 @@
                                             <thead class="thead-themed fw-bold py-0">
                                                 <tr class="table-primary">
                                                     <td nowrap>#</td>
+                                                    <td nowrap align="center">Ürün Resmi</td>
                                                     <td nowrap align="center">Sipariş No</td>
-                                                    <td nowrap align="center">Resmi</td>
                                                     <td nowrap>Ürün</td>
+                                                    <td nowrap>Kaynak</td>
                                                     <td nowrap>Müşteri</td>
-                                                    <td nowrap align="right">Fiyat</td>
+                                                    <td nowrap align="right">Birim Fiyat</td>
                                                     <td nowrap align="center">Adet</td>
-                                                    <td nowrap align="right">Tutar</td>
-                                                    <td nowrap align="right">İndirim</td>
-                                                    <td nowrap align="right">İndirimli Tutar</td>
-                                                    <td nowrap align="right">Komisyon Tutar</td>
-                                                    <td nowrap align="right">Komisyonsuz Tutar</td>
-                                                    <td nowrap align="right">Ürün Maliyet</td>
-                                                    <td nowrap align="right">Net Kar (Kazanç)</td>
-                                                    <td nowrap align="center">Sipariş Tarih</td>
+                                                    <td nowrap align="right">Toplam Tutar</td>
+                                                    <td nowrap align="center">Sipariş Tarihi</td>
+                                                    <td nowrap align="center">Hazırlanma Süresi (Dakika)</td>
                                                     <td nowrap></td>
                                                 </tr>
                                             </thead>
                                             <tbody>
                                                 <?foreach ($rows as $key => $row) {
-                                                    $row->KOMISYON_TUTAR            = ($row->TUTAR - $rows_siparis_index[$row->SIPARIS_NO]->INDIRIM_TUTAR) * ($row_site->TRENDYOL_KOMISYON / 100);
-                                                    $row->KOMISUZYON_TUTAR          = ($row->TUTAR - $rows_siparis_index[$row->SIPARIS_NO]->INDIRIM_TUTAR) - $row->KOMISYON_TUTAR;
-                                                 
-                                                    $row->URUN_MALIYET = 0;
-                                                    if($rows_urun_maliyet_index[$row->URUN_ID][$row->SIPARIS_TARIH_DATE] > 0){
-                                                        $row->URUN_MALIYET = $rows_urun_maliyet_index[$row->URUN_ID][$row->SIPARIS_TARIH_DATE]->MALIYET * $row->ADET;
-
-                                                        $row_toplam->URUN_MALIYET              += $row->URUN_MALIYET;
-                                                    }
-
-                                                    $row->NET_KAR = $row->KOMISUZYON_TUTAR - $row->URUN_MALIYET;
-
                                                     $row_toplam->FIYAT              += $row->FIYAT;
                                                     $row_toplam->ADET               += $row->ADET;
                                                     $row_toplam->TUTAR              += $row->TUTAR;
-                                                    $row_toplam->KOMISYON_TUTAR     += $row->KOMISYON_TUTAR;
-                                                    $row_toplam->KOMISUZYON_TUTAR   += $row->KOMISUZYON_TUTAR;
-                                                    $row_toplam->NET_KAR            += $row->NET_KAR;
-
-
                                                     ?>
                                                     <tr>
                                                         <td><?=($key+1)?></td>
-                                                        <td align="center"><a href="/views/siparis/siparis_detay.php?route=siparis/siparis_listesi&id=<?=$row->SIPARIS_ID?>&token=<?=$row->TOKEN?>" data-bs-toggle="tooltip" title="Sipariş Detayı">#<?=$row->SIPARIS_NO?></a></td>
                                                         <td align="center">
                                                             <?if(is_file(fncImgPathFolder2($row->RESIM_URL, $row_site->IMG_PATH))){?>
                                                                 <img src="<?=fncImgPath($row->RESIM_URL, $row_site->IMG_PATH)?>" class="rounded-3 fancybox" alt="Ürün Resim" height="70">
@@ -192,38 +169,28 @@
                                                                 <img src="<?=$row_site->LOGO?>" class="rounded-3 fancybox" alt="Menü Yönetim" height="70"/>
                                                             <?}?>
                                                         </td>
+                                                        <td align="center"><a href="/views/siparis/siparis_detay.php?route=rapor/siparis_detay_rapor&id=<?=$row->SIPARIS_ID?>&token=<?=$row->TOKEN?>" data-bs-toggle="tooltip" title="Sipariş Detayı">#<?=$row->SIPARIS_NO?></a></td>
                                                         <td nowrap><?=$row->URUN?></td>
+                                                        <td nowrap><?=$row->KAYNAK?></td>
                                                         <td nowrap><?=$row->MUSTERI?></td>
                                                         <td nowrap align="right"><?=FormatSayi::sayi($row->FIYAT)?> ₺</td>
                                                         <td nowrap align="center"><?=$row->ADET?></td>
                                                         <td nowrap align="right"><?=FormatSayi::sayi($row->TUTAR)?> ₺</td>
-                                                        <td nowrap align="right"><?=FormatSayi::sayi($rows_siparis_index[$row->SIPARIS_NO]->INDIRIM_TUTAR)?> ₺</td>
-                                                        <td nowrap align="right"><?=FormatSayi::sayi($row->TUTAR - $rows_siparis_index[$row->SIPARIS_NO]->INDIRIM_TUTAR)?> ₺</td>
-                                                        <td nowrap align="right"><?=FormatSayi::sayi($row->KOMISYON_TUTAR)?> ₺</td>
-                                                        <td nowrap align="right"><?=FormatSayi::sayi($row->KOMISUZYON_TUTAR)?> ₺</td>
-                                                        <td nowrap align="right"><?=FormatSayi::sayi($row->URUN_MALIYET)?> ₺</td>
-                                                        <td nowrap align="right"><?=FormatSayi::sayi($row->NET_KAR)?> ₺</td>
                                                         <td nowrap align="center"><?=FormatTarih::tarih($row->SIPARIS_TARIH)?></td>
+                                                        <td nowrap align="center"><?=!is_null($row->HAZIRLANMA_SURESI) ? $row->HAZIRLANMA_SURESI . " dk" : "-"?></td>
                                                         <td nowrap>
-                                                            <a href="/views/siparis/siparis_detay.php?route=siparis/siparis_listesi&id=<?=$row->ID?>&token=<?=$row->TOKEN?>" data-bs-toggle="tooltip" class="btn btn-primary btn-icon btn-sm" title="Düzenle"> <i class="ri-arrow-right-double-fill"></i></a>
-                                                            <!-- <a href="javascript:;" data-bs-toggle="tooltip" class="btn btn-danger btn-icon btn-sm" data-id="<?=$row->ID?>" onclick="fncUrunSil(this)" title="Sil"><i class="ri-delete-bin-5-line"></i></a> -->
+                                                            <a href="/views/siparis/siparis_detay.php?route=rapor/siparis_detay_rapor&id=<?=$row->SIPARIS_ID?>&token=<?=$row->TOKEN?>" data-bs-toggle="tooltip" class="btn btn-primary btn-icon btn-sm" title="Düzenle"> <i class="ri-arrow-right-double-fill"></i></a>
                                                         </td>
                                                     </tr>
                                                 <?}?>
                                             </tbody>
                                             <tfoot>
                                                 <tr class="table-secondary fw-bold">
-                                                    <td nowrap colspan="5" align="right">Genel Toplam :</td>
+                                                    <td nowrap colspan="6" align="right">Genel Toplam :</td>
                                                     <td nowrap align="right"><?=FormatSayi::sayi($row_toplam->FIYAT,2)?> ₺</td>
                                                     <td nowrap align="center"><?=FormatSayi::sayi($row_toplam->ADET,0)?></td>
-                                                    <td nowrap></td>
-                                                    <td nowrap></td>
                                                     <td nowrap align="right"><?=FormatSayi::sayi($row_toplam->TUTAR,2)?> ₺</td>
-                                                    <td nowrap align="right"><?=FormatSayi::sayi($row_toplam->KOMISYON_TUTAR,2)?> ₺</td>
-                                                    <td nowrap align="right"><?=FormatSayi::sayi($row_toplam->KOMISUZYON_TUTAR,2)?> ₺</td>
-                                                    <td nowrap align="right"><?=FormatSayi::sayi($row_toplam->URUN_MALIYET,2)?> ₺</td>
-                                                    <td nowrap align="right"><?=FormatSayi::sayi($row_toplam->NET_KAR,2)?> ₺</td>
-                                                    <td nowrap colspan="2"></td>
+                                                    <td nowrap colspan="3"></td>
                                                 </tr>
                                             </tfoot>
                                         </table>

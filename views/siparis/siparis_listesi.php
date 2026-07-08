@@ -10,13 +10,11 @@
 
     $excel = new excelSayfasi();
     $excel->sutunEkle("Sipariş No","SIPARIS_NO","");
+    $excel->sutunEkle("Kaynak","KAYNAK","");
     $excel->sutunEkle("Müşteri","MUSTERI","");
-    $excel->sutunEkle("Not","SIPARIS_NOT","");
     $excel->sutunEkle("Tutar","TUTAR","");
-    $excel->sutunEkle("Sipariş Tarih","SIPARIS_TARIH","");
-    $excel->sutunEkle("Hazırlanma Tarih","HAZIRLANMA_TARIH","");
-    $excel->sutunEkle("Hazırlanma Süresi","HAZIRLANMA_SURESI","");
     $excel->sutunEkle("Süreç","SIPARIS_SUREC","");
+    $excel->sutunEkle("Sipariş Tarihi","SIPARIS_TARIH","");
     $excelOut = $excel->excel();
     
     $result             = $cSiparis->getSiparisler($_REQUEST);
@@ -33,6 +31,11 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0" />
         <title> <?=$row_site->TITLE?> | Sipariş Listesi </title>
         <?=$cTheme->Linkler()?>
+        <style type="text/css">
+            .table-row-clickable {
+                cursor: pointer;
+            }
+        </style>
     </head>
     <body>
         <div class="layout-wrapper layout-content-navbar">
@@ -119,13 +122,11 @@
                                                 <tr class="table-primary">
                                                     <td nowrap>#</td>
                                                     <td nowrap align="center">Sipariş No</td>
+                                                    <td nowrap>Kaynak</td>
                                                     <td nowrap>Müşteri</td>
-                                                    <td nowrap>Not</td>
                                                     <td nowrap>Tutar</td>
                                                     <td nowrap align="center">Süreç</td>
-                                                    <td nowrap align="center">Sipariş Tarih</td>
-                                                    <td nowrap align="center">Hazırlanma Tarih</td>
-                                                    <td nowrap align="center">Hazırlanma Süresi</td>
+                                                    <td nowrap align="center">Sipariş Tarihi</td>
                                                     <td nowrap></td>
                                                 </tr>
                                             </thead>
@@ -133,19 +134,16 @@
                                                 <?foreach ($rows as $key => $row) {
                                                     $row_toplam->TUTAR += $row->TUTAR;
                                                     ?>
-                                                    <tr>
+                                                    <tr class="table-row-clickable" data-href="/views/siparis/siparis_detay.php?route=siparis/siparis_listesi&id=<?=$row->ID?>&token=<?=$row->TOKEN?>">
                                                         <td><?=($key+1)?></td>
                                                         <td align="center"><a href="/views/siparis/siparis_detay.php?route=siparis/siparis_listesi&id=<?=$row->ID?>&token=<?=$row->TOKEN?>" data-bs-toggle="tooltip" title="Sipariş Detayı">#<?=$row->SIPARIS_NO?></a></td>
+                                                        <td nowrap><?=$row->KAYNAK?></td>
                                                         <td nowrap><?=$row->MUSTERI?></td>
-                                                        <td nowrap><?=FormatYazi::kisalt2($row->SIPARIS_NOT)?></td>
                                                         <td nowrap><?=FormatSayi::sayi($row->TUTAR)?> ₺</td>
                                                         <td nowrap align="center"><?=fncSiparisSurecSpan($row->SIPARIS_SUREC_ID)?></td>
                                                         <td nowrap align="center"><?=FormatTarih::tarih($row->SIPARIS_TARIH)?></td>
-                                                        <td nowrap align="center"><?=FormatTarih::tarih($row->HAZIRLANMA_TARIH)?></td>
-                                                        <td nowrap align="center"><?=$row->HAZIRLANMA_SURESI?></td>
                                                         <td nowrap>
                                                             <a href="/views/siparis/siparis_detay.php?route=siparis/siparis_listesi&id=<?=$row->ID?>&token=<?=$row->TOKEN?>" data-bs-toggle="tooltip" class="btn btn-primary btn-icon btn-sm" title="Düzenle"> <i class="ri-arrow-right-double-fill"></i></a>
-                                                            <!-- <a href="javascript:;" data-bs-toggle="tooltip" class="btn btn-danger btn-icon btn-sm" data-id="<?=$row->ID?>" onclick="fncUrunSil(this)" title="Sil"><i class="ri-delete-bin-5-line"></i></a> -->
                                                         </td>
                                                     </tr>
                                                 <?}?>
@@ -157,8 +155,6 @@
                                                     <td></td>
                                                     <td></td>
                                                     <td nowrap><?=FormatSayi::sayi($row_toplam->TUTAR)?> ₺</td>
-                                                    <td></td>
-                                                    <td></td>
                                                     <td></td>
                                                     <td></td>
                                                     <td></td>
@@ -247,6 +243,14 @@
 
     $('#siparis_tarih').on('change', function (e) {
         $(this).closest('.input-group').find(":checkbox").prop("checked", true);
+    });
+
+    $(document).ready(function() {
+        $('.table-row-clickable').on('click', function(e) {
+            if (!$(e.target).is('a, button, i, span, input, label')) {
+                window.location = $(this).data('href');
+            }
+        });
     });
 
 </script>

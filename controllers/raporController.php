@@ -102,11 +102,13 @@ class RaporController
                     DATE(S.SIPARIS_TARIH) AS SIPARIS_TARIH_DATE,
                     S.MUSTERI,
                     S.TOKEN,
+                    S.KAYNAK,
+                    TIMESTAMPDIFF(MINUTE, S.SIPARIS_TARIH, S.HAZIRLANMA_TARIH) AS HAZIRLANMA_SURESI,
                     U.ID AS URUN_ID,
                     CONCAT('urun/', U.ID, '/', YEAR(U.TARIH), '/', UR.RESIM_ADI) AS RESIM_URL
                 FROM SIPARIS_DETAY AS SD
                     LEFT JOIN SIPARIS AS S ON S.ID = SD.SIPARIS_ID
-                    LEFT JOIN URUN AS U ON U.TRENDYOL_URUN_ID = SD.TRENDYOL_URUN_ID
+                    LEFT JOIN URUN AS U ON (U.TRENDYOL_URUN_ID = SD.TRENDYOL_URUN_ID AND SD.TRENDYOL_URUN_ID IS NOT NULL AND SD.TRENDYOL_URUN_ID <> '') OR U.ID = SD.URUN_ID
                     LEFT JOIN URUN_RESIM AS UR ON UR.URUN_ID = U.ID AND UR.VITRIN = 1
                 WHERE 1
                 ";

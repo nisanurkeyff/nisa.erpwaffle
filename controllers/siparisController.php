@@ -130,7 +130,7 @@ class SiparisController {
                     CONCAT('urun/', U.ID, '/', YEAR(U.TARIH), '/', UR.RESIM_ADI) AS RESIM_URL
                 FROM SIPARIS_DETAY AS SD
                     LEFT JOIN SIPARIS AS S ON S.ID = SD.SIPARIS_ID
-                    LEFT JOIN URUN AS U ON U.TRENDYOL_URUN_ID = SD.TRENDYOL_URUN_ID
+                    LEFT JOIN URUN AS U ON (U.TRENDYOL_URUN_ID = SD.TRENDYOL_URUN_ID AND SD.TRENDYOL_URUN_ID IS NOT NULL AND SD.TRENDYOL_URUN_ID <> '') OR U.ID = SD.URUN_ID
                     LEFT JOIN URUN_RESIM AS UR ON UR.URUN_ID = U.ID AND UR.VITRIN = 1
                 WHERE S.ID = :ID
                 ";
@@ -787,5 +787,160 @@ class SiparisController {
         $sql .= " GROUP BY HOUR(S.SIPARIS_TARIH)";
         $rows = DB::get($sql, $data);
         return $rows;
+    }
+
+    public function siparis_ekle() {
+        if (!in_array($_SESSION['yetki_id'], array(1, 2, 3))) {
+            return [
+                "HATA" => true,
+                "ACIKLAMA" => "Sipariş eklemek için yetkiniz yok!"
+            ];
+        }
+
+        if (empty($_POST['urun_id']) || !is_array($_POST['urun_id'])) {
+            return [
+                "HATA" => true,
+                "ACIKLAMA" => "Lütfen en az bir ürün ekleyin."
+            ];
+        }
+
+        // Get prices and data for the selected products from the DB
+        $urun_ids = array_map('intval', $_POST['urun_id']);
+        $placeholders = implode(',', array_fill(0, count($urun_ids), '?'));
+        
+        $products = DB::get("SELECT ID, URUN, TRENDYOL_URUN_ID, FIYAT FROM URUN WHERE ID IN ($placeholders)", $urun_ids);
+        $products_index = array();
+        foreach ($products as $p) {
+            $products_index[$p->ID] = $p;
+        }
+
+        $subtotal = 0;
+        $items_to_insert = array();
+
+        foreach ($_POST['urun_id'] as $idx => $prod_id_raw) {
+            $prod_id = intval($prod_id_raw);
+            $qty = isset($_POST['adet'][$idx]) ? intval($_POST['adet'][$idx]) : 0;
+            if ($qty < 1) {
+                continue;
+            }
+            if (!isset($products_index[$prod_id])) {
+                continue;
+            }
+            
+            $p = $products_index[$prod_id];
+            $unit_price = floatval($p->FIYAT);
+            $total_price = $unit_price * $qty;
+            $subtotal += $total_price;
+
+            $items_to_insert[] = [
+                'urun_id' => $p->ID,
+                'trendyol_urun_id' => $p->TRENDYOL_URUN_ID,
+                'urun_adi' => $p->URUN,
+                'fiyat' => $unit_price,
+                'adet' => $qty,
+                'tutar' => $total_price
+            ];
+        }
+
+        if (empty($items_to_insert)) {
+            return [
+                "HATA" => true,
+                "ACIKLAMA" => "Geçerli ürün ve adet bulunamadı."
+            ];
+        }
+
+        $indirim_tutar = isset($_POST['indirim_tutar']) ? floatval($_POST['indirim_tutar']) : 0;
+        if ($indirim_tutar < 0) {
+            $indirim_tutar = 0;
+        }
+        $grand_total = $subtotal - $indirim_tutar;
+        if ($grand_total < 0) {
+            $grand_total = 0;
+        }
+
+        $kaynak = !empty($_POST['kaynak']) ? trim($_POST['kaynak']) : 'Mağaza';
+        $musteri = !empty($_POST['musteri']) ? trim($_POST['musteri']) : 'Mağaza Müşterisi';
+        $telefon = !empty($_POST['telefon']) ? trim($_POST['telefon']) : '';
+        $odeme = !empty($_POST['odeme']) ? trim($_POST['odeme']) : 'Nakit';
+        $siparis_not = !empty($_POST['siparis_not']) ? trim($_POST['siparis_not']) : '';
+        
+        $siparis_no = 'M' . time();
+        $token = md5(microtime() . rand(1, 1000000));
+        $now = date('Y-m-d H:i:s');
+        $kayit_yapan_id = intval($_SESSION['kullanici_id']);
+
+        // Insert into SIPARIS
+        $data_siparis = array(
+            ':KAYNAK' => $kaynak,
+            ':SIPARIS_NO' => $siparis_no,
+            ':TUTAR' => $grand_total,
+            ':TELEFON' => $telefon,
+            ':MUSTERI' => $musteri,
+            ':ODEME' => $odeme,
+            ':SIPARIS_NOT' => $siparis_not,
+            ':SIPARIS_TARIH' => $now,
+            ':HAZIRLANMA_TARIH' => $now,
+            ':INDIRIM' => ($indirim_tutar > 0) ? 'İndirim' : '',
+            ':INDIRIM_TUTAR' => $indirim_tutar,
+            ':KAYIT_YAPAN_ID' => $kayit_yapan_id,
+            ':TOKEN' => $token
+        );
+
+        $sql_siparis = "INSERT INTO SIPARIS SET 
+                            KAYNAK = :KAYNAK,
+                            SIPARIS_NO = :SIPARIS_NO,
+                            SIPARIS_SUREC_ID = 1,
+                            TUTAR = :TUTAR,
+                            TELEFON = :TELEFON,
+                            MUSTERI = :MUSTERI,
+                            ODEME = :ODEME,
+                            SIPARIS_NOT = :SIPARIS_NOT,
+                            SIPARIS_TARIH = :SIPARIS_TARIH,
+                            HAZIRLANMA_TARIH = :HAZIRLANMA_TARIH,
+                            INDIRIM = :INDIRIM,
+                            INDIRIM_TUTAR = :INDIRIM_TUTAR,
+                            KAYIT_YAPAN_ID = :KAYIT_YAPAN_ID,
+                            TOKEN = :TOKEN";
+
+        $siparis_id = DB::insert($sql_siparis, $data_siparis);
+
+        if ($siparis_id > 0) {
+            // Insert each item into SIPARIS_DETAY
+            foreach ($items_to_insert as $item) {
+                $data_detay = array(
+                    ':SIPARIS_ID' => $siparis_id,
+                    ':SIPARIS_NO' => $siparis_no,
+                    ':URUN_ID' => $item['urun_id'],
+                    ':TRENDYOL_URUN_ID' => $item['trendyol_urun_id'],
+                    ':URUN' => $item['urun_adi'],
+                    ':FIYAT' => $item['fiyat'],
+                    ':ADET' => $item['adet'],
+                    ':TUTAR' => $item['tutar']
+                );
+
+                $sql_detay = "INSERT INTO SIPARIS_DETAY SET 
+                                SIPARIS_ID = :SIPARIS_ID,
+                                SIPARIS_NO = :SIPARIS_NO,
+                                URUN_ID = :URUN_ID,
+                                TRENDYOL_URUN_ID = :TRENDYOL_URUN_ID,
+                                URUN = :URUN,
+                                FIYAT = :FIYAT,
+                                ADET = :ADET,
+                                TUTAR = :TUTAR";
+                DB::insert($sql_detay, $data_detay);
+            }
+
+            return [
+                "HATA" => false,
+                "ACIKLAMA" => "Sipariş başarıyla oluşturuldu.",
+                "ID" => $siparis_id,
+                "TOKEN" => $token
+            ];
+        } else {
+            return [
+                "HATA" => true,
+                "ACIKLAMA" => "Sipariş oluşturulurken bir hata oluştu."
+            ];
+        }
     }
 }
