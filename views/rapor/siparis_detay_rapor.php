@@ -13,11 +13,19 @@
     $excel->sutunEkle("Ürün","URUN","");
     $excel->sutunEkle("Kaynak","KAYNAK","");
     $excel->sutunEkle("Müşteri","MUSTERI","");
-    $excel->sutunEkle("Birim Fiyat","FIYAT","");
+    $excel->sutunEkle("Birim Fiyat","FIYAT","FormatSayi::virgul2");
     $excel->sutunEkle("Adet","ADET","");
-    $excel->sutunEkle("Ekstra (Tutar)","EKSTRA_TUTAR","");
-    $excel->sutunEkle("Toplam Tutar","TUTAR","");
-    $excel->sutunEkle("Sipariş Tarihi","SIPARIS_TARIH","");
+    $excel->sutunEkle("Ekstra (Tutar)","EKSTRA_TUTAR","FormatSayi::virgul2");
+    $excel->sutunEkle("Ara Toplam","ARA_TOPLAM","FormatSayi::virgul2");
+    $excel->sutunEkle("İndirim","INDIRIM","FormatSayi::virgul2");
+    $excel->sutunEkle("Teslimat Ücreti","TESLIMAT_UCRETI","FormatSayi::virgul2");
+    $excel->sutunEkle("Toplam Tutar","TOPLAM_TUTAR","FormatSayi::virgul2");
+    $excel->sutunEkle("Komisyon Oranı","KOMISYON_ORANI","FormatSayi::virgul2");
+    $excel->sutunEkle("Komisyon Tutarı","KOMISYON_TUTARI","FormatSayi::virgul2");
+    $excel->sutunEkle("Komisyonsuz Tutar","KOMISYONSUZ_TUTAR","FormatSayi::virgul2");
+    $excel->sutunEkle("Ürün Maliyeti","URUN_MALIYETI","FormatSayi::virgul2");
+    $excel->sutunEkle("Net Kar","NET_KAR","FormatSayi::virgul2");
+    $excel->sutunEkle("Sipariş Tarihi","SIPARIS_TARIH","format2");
     $excel->sutunEkle("Hazırlanma Süresi (Dakika)","HAZIRLANMA_SURESI","");
     $excelOut = $excel->excel();
     
@@ -150,7 +158,15 @@
                                                     <td nowrap align="right">Birim Fiyat</td>
                                                     <td nowrap align="center">Adet</td>
                                                     <td nowrap align="right">Ekstra (Tutar)</td>
+                                                    <td nowrap align="right">Ara Toplam</td>
+                                                    <td nowrap align="right">İndirim</td>
+                                                    <td nowrap align="right">Teslimat Ücreti</td>
                                                     <td nowrap align="right">Toplam Tutar</td>
+                                                    <td nowrap align="right">Komisyon Oranı</td>
+                                                    <td nowrap align="right">Komisyon Tutarı</td>
+                                                    <td nowrap align="right">Komisyonsuz Tutar</td>
+                                                    <td nowrap align="right">Ürün Maliyeti</td>
+                                                    <td nowrap align="right">Net Kar</td>
                                                     <td nowrap align="center">Sipariş Tarihi</td>
                                                     <td nowrap align="center">Hazırlanma Süresi (Dakika)</td>
                                                     <td nowrap></td>
@@ -161,7 +177,14 @@
                                                     $row_toplam->FIYAT              += $row->FIYAT;
                                                     $row_toplam->ADET               += $row->ADET;
                                                     $row_toplam->EKSTRA_TUTAR       += $row->EKSTRA_TUTAR;
-                                                    $row_toplam->TUTAR              += $row->TUTAR;
+                                                    $row_toplam->ARA_TOPLAM         += $row->ARA_TOPLAM;
+                                                    $row_toplam->INDIRIM            += $row->INDIRIM;
+                                                    $row_toplam->TESLIMAT_UCRETI    += $row->TESLIMAT_UCRETI;
+                                                    $row_toplam->TOPLAM_TUTAR       += $row->TOPLAM_TUTAR;
+                                                    $row_toplam->KOMISYON_TUTARI    += $row->KOMISYON_TUTARI;
+                                                    $row_toplam->KOMISYONSUZ_TUTAR  += $row->KOMISYONSUZ_TUTAR;
+                                                    $row_toplam->URUN_MALIYETI      += $row->URUN_MALIYETI;
+                                                    $row_toplam->NET_KAR            += $row->NET_KAR;
                                                     ?>
                                                     <tr>
                                                         <td><?=($key+1)?></td>
@@ -186,7 +209,15 @@
                                                         <td nowrap align="right"><?=FormatSayi::sayi($row->FIYAT)?> ₺</td>
                                                         <td nowrap align="center"><?=$row->ADET?></td>
                                                         <td nowrap align="right"><?=FormatSayi::sayi($row->EKSTRA_TUTAR)?> ₺</td>
-                                                        <td nowrap align="right"><?=FormatSayi::sayi($row->TUTAR)?> ₺</td>
+                                                        <td nowrap align="right"><?=FormatSayi::sayi($row->ARA_TOPLAM)?> ₺</td>
+                                                        <td nowrap align="right" class="text-danger"><?=FormatSayi::sayi($row->INDIRIM)?> ₺</td>
+                                                        <td nowrap align="right" class="text-success"><?=FormatSayi::sayi($row->TESLIMAT_UCRETI)?> ₺</td>
+                                                        <td nowrap align="right" class="fw-semibold"><?=FormatSayi::sayi($row->TOPLAM_TUTAR)?> ₺</td>
+                                                        <td nowrap align="right">%<?=FormatSayi::sayi($row->KOMISYON_ORANI, 0)?></td>
+                                                        <td nowrap align="right" class="text-danger"><?=FormatSayi::sayi($row->KOMISYON_TUTARI)?> ₺</td>
+                                                        <td nowrap align="right" class="fw-semibold"><?=FormatSayi::sayi($row->KOMISYONSUZ_TUTAR)?> ₺</td>
+                                                        <td nowrap align="right" class="text-secondary"><?=FormatSayi::sayi($row->URUN_MALIYETI)?> ₺</td>
+                                                        <td nowrap align="right" class="<?=$row->NET_KAR > 0 ? 'text-success fw-bold' : ($row->NET_KAR < 0 ? 'text-danger fw-bold' : 'text-dark')?>"><?=FormatSayi::sayi($row->NET_KAR)?> ₺</td>
                                                         <td nowrap align="center"><?=FormatTarih::tarih($row->SIPARIS_TARIH)?></td>
                                                         <td nowrap align="center"><?=!is_null($row->HAZIRLANMA_SURESI) ? $row->HAZIRLANMA_SURESI . " dk" : "-"?></td>
                                                         <td nowrap>
@@ -201,7 +232,15 @@
                                                     <td nowrap align="right"><?=FormatSayi::sayi($row_toplam->FIYAT,2)?> ₺</td>
                                                     <td nowrap align="center"><?=FormatSayi::sayi($row_toplam->ADET,0)?></td>
                                                     <td nowrap align="right"><?=FormatSayi::sayi($row_toplam->EKSTRA_TUTAR,2)?> ₺</td>
-                                                    <td nowrap align="right"><?=FormatSayi::sayi($row_toplam->TUTAR,2)?> ₺</td>
+                                                    <td nowrap align="right"><?=FormatSayi::sayi($row_toplam->ARA_TOPLAM,2)?> ₺</td>
+                                                    <td nowrap align="right" class="text-danger"><?=FormatSayi::sayi($row_toplam->INDIRIM,2)?> ₺</td>
+                                                    <td nowrap align="right" class="text-success"><?=FormatSayi::sayi($row_toplam->TESLIMAT_UCRETI,2)?> ₺</td>
+                                                    <td nowrap align="right" class="fw-bold"><?=FormatSayi::sayi($row_toplam->TOPLAM_TUTAR,2)?> ₺</td>
+                                                    <td nowrap align="right">-</td>
+                                                    <td nowrap align="right" class="text-danger"><?=FormatSayi::sayi($row_toplam->KOMISYON_TUTARI,2)?> ₺</td>
+                                                    <td nowrap align="right" class="fw-bold"><?=FormatSayi::sayi($row_toplam->KOMISYONSUZ_TUTAR,2)?> ₺</td>
+                                                    <td nowrap align="right" class="text-secondary"><?=FormatSayi::sayi($row_toplam->URUN_MALIYETI,2)?> ₺</td>
+                                                    <td nowrap align="right" class="<?=$row_toplam->NET_KAR > 0 ? 'text-success fw-bold' : ($row_toplam->NET_KAR < 0 ? 'text-danger fw-bold' : 'text-dark')?>"><?=FormatSayi::sayi($row_toplam->NET_KAR,2)?> ₺</td>
                                                     <td nowrap colspan="3"></td>
                                                 </tr>
                                             </tfoot>

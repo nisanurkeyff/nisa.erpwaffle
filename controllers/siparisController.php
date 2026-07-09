@@ -937,6 +937,14 @@ class SiparisController {
         $siparis_tipi = !empty($_POST['siparis_tipi']) ? trim($_POST['siparis_tipi']) : 'Gel Al';
         $hazirlanma_suresi = isset($_POST['hazirlanma_suresi']) && $_POST['hazirlanma_suresi'] !== '' ? intval($_POST['hazirlanma_suresi']) : null;
         
+        $komisyon_orani = isset($_POST['komisyon_orani']) && $_POST['komisyon_orani'] !== '' ? floatval($_POST['komisyon_orani']) : null;
+        if (is_null($komisyon_orani)) {
+            if ($kaynak == 'Trendyol Go') $komisyon_orani = 38.00;
+            else if ($kaynak == 'Yemeksepeti') $komisyon_orani = 35.00;
+            else if ($kaynak == 'Getir') $komisyon_orani = 30.00;
+            else $komisyon_orani = 0.00;
+        }
+
         $is_edit = isset($_POST['id']) && intval($_POST['id']) > 0;
         $order_id = $is_edit ? intval($_POST['id']) : 0;
         $kayit_yapan_id = intval($_SESSION['kullanici_id']);
@@ -1000,6 +1008,9 @@ class SiparisController {
             if (intval($old_order->HAZIRLANMA_SURESI) != intval($hazirlanma_suresi)) {
                 $logChanges('Hazırlanma Süresi', intval($old_order->HAZIRLANMA_SURESI) . ' Dk', intval($hazirlanma_suresi) . ' Dk', "Hazırlanma süresi değiştirildi.");
             }
+            if (floatval($old_order->KOMISYON_ORANI) != $komisyon_orani) {
+                $logChanges('Komisyon Oranı', floatval($old_order->KOMISYON_ORANI) . '%', $komisyon_orani . '%', "Komisyon oranı değiştirildi.");
+            }
 
             // Compare items
             $new_items = array();
@@ -1040,7 +1051,7 @@ class SiparisController {
                     }
                     foreach ($old_exts as $ex_id => $ex_name) {
                         if (!isset($new_exts[$ex_id])) {
-                            $logChanges('Ekstra Malzeme', "+ $ex_name eklendi", '', "Siparişten {$new_item['urun']} için $ex_name ekstrası çıkarıldı.");
+                            $logChanges('Ekstra Malzeme', "+ $ex_name çıkarıldı", '', "Siparişten {$new_item['urun']} için $ex_name ekstrası çıkarıldı.");
                         }
                     }
                 }
@@ -1063,7 +1074,8 @@ class SiparisController {
                                 INDIRIM_TUTAR = :INDIRIM_TUTAR,
                                 SIPARIS_TIPI = :SIPARIS_TIPI,
                                 TESLIMAT_UCRETI = :TESLIMAT_UCRETI,
-                                HAZIRLANMA_SURESI = :HAZIRLANMA_SURESI
+                                HAZIRLANMA_SURESI = :HAZIRLANMA_SURESI,
+                                KOMISYON_ORANI = :KOMISYON_ORANI
                             WHERE ID = :ID";
             DB::exec($sql_siparis, [
                 ':KAYNAK' => $kaynak,
@@ -1078,6 +1090,7 @@ class SiparisController {
                 ':SIPARIS_TIPI' => $siparis_tipi,
                 ':TESLIMAT_UCRETI' => $teslimat_ucreti,
                 ':HAZIRLANMA_SURESI' => $hazirlanma_suresi,
+                ':KOMISYON_ORANI' => $komisyon_orani,
                 ':ID' => $order_id
             ]);
 
@@ -1112,6 +1125,7 @@ class SiparisController {
                 ':SIPARIS_TIPI' => $siparis_tipi,
                 ':TESLIMAT_UCRETI' => $teslimat_ucreti,
                 ':HAZIRLANMA_SURESI' => $hazirlanma_suresi,
+                ':KOMISYON_ORANI' => $komisyon_orani,
                 ':KAYIT_YAPAN_ID' => $kayit_yapan_id,
                 ':TOKEN' => $token
             );
@@ -1132,6 +1146,7 @@ class SiparisController {
                                 SIPARIS_TIPI = :SIPARIS_TIPI,
                                 TESLIMAT_UCRETI = :TESLIMAT_UCRETI,
                                 HAZIRLANMA_SURESI = :HAZIRLANMA_SURESI,
+                                KOMISYON_ORANI = :KOMISYON_ORANI,
                                 KAYIT_YAPAN_ID = :KAYIT_YAPAN_ID,
                                 TOKEN = :TOKEN";
 

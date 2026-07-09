@@ -199,6 +199,12 @@
                                                         <label for="input_hazirlanma">Hazırlanma Süresi (Dakika)</label>
                                                     </div>
                                                 </div>
+                                                <div class="col-md-6">
+                                                    <div class="form-floating form-floating-outline">
+                                                        <input type="number" id="input_komisyon_orani" class="form-control" value="<?=$is_edit ? floatval($order_row->KOMISYON_ORANI) : '0'?>" placeholder="0" min="0" max="100" step="0.1">
+                                                        <label for="input_komisyon_orani">Komisyon Oranı (%)</label>
+                                                    </div>
+                                                </div>
                                                 <div class="col-md-12">
                                                     <div class="form-floating form-floating-outline">
                                                         <input type="text" id="musteri" class="form-control" value="<?=$is_edit ? htmlspecialchars($order_row->MUSTERI) : 'Mağaza Müşterisi'?>" placeholder="Müşteri Adı Soyadı">
@@ -568,6 +574,16 @@
             updateTotals();
         });
 
+        // Auto-change commission rate based on kaynak selection
+        $("#kaynak").on("change", function() {
+            var kaynak = $(this).val();
+            var comm = 0;
+            if (kaynak === 'Trendyol Go') comm = 38;
+            else if (kaynak === 'Yemeksepeti') comm = 35;
+            else if (kaynak === 'Getir') comm = 30;
+            $("#input_komisyon_orani").val(comm);
+        });
+
         // Submit order via AJAX
         $("#btn_siparis_olustur").on("click", function(e) {
             e.preventDefault();
@@ -592,6 +608,7 @@
                 indirim_tutar: $("#input_indirim").val(),
                 teslimat_ucreti: $("#input_teslimat").val(),
                 hazirlanma_suresi: $("#input_hazirlanma").val(),
+                komisyon_orani: $("#input_komisyon_orani").val(),
                 cart_data: JSON.stringify(cart)
             };
 

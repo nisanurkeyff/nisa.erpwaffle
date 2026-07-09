@@ -98,19 +98,82 @@ class RaporController
         $data = array();
         $sql = "SELECT 
                     SD.*,
-                    (SELECT COALESCE(SUM(SE.FIYAT), 0) FROM SIPARIS_EKSTRA AS SE WHERE SE.SIPARIS_DETAY_ID = SD.ID) * SD.ADET AS EKSTRA_TUTAR,
+                    COALESCE(SE.EKSTRA_BIRIM_TOPLAM, 0) * SD.ADET AS EKSTRA_TUTAR,
+                    SD.TUTAR AS ARA_TOPLAM,
                     S.SIPARIS_TARIH,
                     DATE(S.SIPARIS_TARIH) AS SIPARIS_TARIH_DATE,
                     S.MUSTERI,
                     S.TOKEN,
                     S.KAYNAK,
                     TIMESTAMPDIFF(MINUTE, S.SIPARIS_TARIH, S.HAZIRLANMA_TARIH) AS HAZIRLANMA_SURESI,
+                    S.KOMISYON_ORANI,
+                    
+                    CASE WHEN SO.ARA_TOPLAM_TOPLAM > 0 
+                         THEN (SD.TUTAR / SO.ARA_TOPLAM_TOPLAM) * S.INDIRIM_TUTAR 
+                         ELSE 0 END AS INDIRIM,
+                         
+                    CASE WHEN SO.ARA_TOPLAM_TOPLAM > 0 
+                         THEN (SD.TUTAR / SO.ARA_TOPLAM_TOPLAM) * S.TESLIMAT_UCRETI 
+                         ELSE 0 END AS TESLIMAT_UCRETI,
+                         
+                    SD.TUTAR 
+                        - (CASE WHEN SO.ARA_TOPLAM_TOPLAM > 0 
+                                THEN (SD.TUTAR / SO.ARA_TOPLAM_TOPLAM) * S.INDIRIM_TUTAR 
+                                ELSE 0 END) 
+                        + (CASE WHEN SO.ARA_TOPLAM_TOPLAM > 0 
+                                THEN (SD.TUTAR / SO.ARA_TOPLAM_TOPLAM) * S.TESLIMAT_UCRETI 
+                                ELSE 0 END) AS TOPLAM_TUTAR,
+                                
+                    (SD.TUTAR 
+                        - (CASE WHEN SO.ARA_TOPLAM_TOPLAM > 0 
+                                THEN (SD.TUTAR / SO.ARA_TOPLAM_TOPLAM) * S.INDIRIM_TUTAR 
+                                ELSE 0 END) 
+                        + (CASE WHEN SO.ARA_TOPLAM_TOPLAM > 0 
+                                THEN (SD.TUTAR / SO.ARA_TOPLAM_TOPLAM) * S.TESLIMAT_UCRETI 
+                                ELSE 0 END)) * (S.KOMISYON_ORANI / 100) AS KOMISYON_TUTARI,
+                                
+                    (SD.TUTAR 
+                        - (CASE WHEN SO.ARA_TOPLAM_TOPLAM > 0 
+                                THEN (SD.TUTAR / SO.ARA_TOPLAM_TOPLAM) * S.INDIRIM_TUTAR 
+                                ELSE 0 END) 
+                        + (CASE WHEN SO.ARA_TOPLAM_TOPLAM > 0 
+                                THEN (SD.TUTAR / SO.ARA_TOPLAM_TOPLAM) * S.TESLIMAT_UCRETI 
+                                ELSE 0 END)) * (1 - (S.KOMISYON_ORANI / 100)) AS KOMISYONSUZ_TUTAR,
+                                
+                    COALESCE(
+                        (SELECT UM2.MALIYET FROM URUN_MALIYET AS UM2 WHERE UM2.URUN_ID = U.ID AND UM2.MALIYET_TARIH <= DATE(S.SIPARIS_TARIH) ORDER BY UM2.MALIYET_TARIH DESC LIMIT 1),
+                        (SELECT UM3.MALIYET FROM URUN_MALIYET AS UM3 WHERE UM3.URUN_ID = U.ID ORDER BY UM3.MALIYET_TARIH ASC LIMIT 1),
+                        0
+                    ) * SD.ADET AS URUN_MALIYETI,
+                    
+                    ((SD.TUTAR 
+                        - (CASE WHEN SO.ARA_TOPLAM_TOPLAM > 0 
+                                THEN (SD.TUTAR / SO.ARA_TOPLAM_TOPLAM) * S.INDIRIM_TUTAR 
+                                ELSE 0 END) 
+                        + (CASE WHEN SO.ARA_TOPLAM_TOPLAM > 0 
+                                THEN (SD.TUTAR / SO.ARA_TOPLAM_TOPLAM) * S.TESLIMAT_UCRETI 
+                                ELSE 0 END)) * (1 - (S.KOMISYON_ORANI / 100))) 
+                        - (COALESCE(
+                            (SELECT UM2.MALIYET FROM URUN_MALIYET AS UM2 WHERE UM2.URUN_ID = U.ID AND UM2.MALIYET_TARIH <= DATE(S.SIPARIS_TARIH) ORDER BY UM2.MALIYET_TARIH DESC LIMIT 1),
+                            (SELECT UM3.MALIYET FROM URUN_MALIYET AS UM3 WHERE UM3.URUN_ID = U.ID ORDER BY UM3.MALIYET_TARIH ASC LIMIT 1),
+                            0
+                        ) * SD.ADET) AS NET_KAR,
                     U.ID AS URUN_ID,
                     CONCAT('urun/', U.ID, '/', YEAR(U.TARIH), '/', UR.RESIM_ADI) AS RESIM_URL
                 FROM SIPARIS_DETAY AS SD
                     LEFT JOIN SIPARIS AS S ON S.ID = SD.SIPARIS_ID
                     LEFT JOIN URUN AS U ON (U.TRENDYOL_URUN_ID = SD.TRENDYOL_URUN_ID AND SD.TRENDYOL_URUN_ID IS NOT NULL AND SD.TRENDYOL_URUN_ID <> '') OR U.ID = SD.URUN_ID
                     LEFT JOIN URUN_RESIM AS UR ON UR.URUN_ID = U.ID AND UR.VITRIN = 1
+                    LEFT JOIN (
+                        SELECT SIPARIS_ID, SUM(TUTAR) AS ARA_TOPLAM_TOPLAM 
+                        FROM SIPARIS_DETAY 
+                        GROUP BY SIPARIS_ID
+                    ) AS SO ON SO.SIPARIS_ID = S.ID
+                    LEFT JOIN (
+                        SELECT SIPARIS_DETAY_ID, SUM(FIYAT) AS EKSTRA_BIRIM_TOPLAM 
+                        FROM SIPARIS_EKSTRA 
+                        GROUP BY SIPARIS_DETAY_ID
+                    ) AS SE ON SE.SIPARIS_DETAY_ID = SD.ID
                 WHERE 1
                 ";
 
