@@ -4,13 +4,57 @@
 
     // Query active products
     $rows_urunler = DB::get("SELECT ID, URUN, FIYAT FROM URUN WHERE DURUM = '1' ORDER BY URUN ASC");
+
+    // Query active extra materials
+    $rows_ekstralar = DB::get("SELECT ID, MALZEME, EKSTRA_FIYAT FROM MALZEME WHERE DURUM = '1' AND EKSTRA = '1' ORDER BY MALZEME ASC");
+
+    // Query active order sources and types
+    $rows_kaynaklar = DB::get("SELECT ID, KAYNAK FROM SIPARIS_KAYNAK WHERE DURUM = '1' ORDER BY ID ASC");
+    $rows_tipler = DB::get("SELECT ID, SIPARIS_TIPI FROM SIPARIS_TIPI WHERE DURUM = '1' ORDER BY ID ASC");
+
+    $is_edit = false;
+    $order_row = null;
+    $cart_js = '[]';
+
+    if (isset($_GET['id']) && intval($_GET['id']) > 0) {
+        $order_row = $cSiparis->getSiparis(['id' => $_GET['id']]);
+        if ($order_row) {
+            fncTokenKontrol($order_row);
+            $is_edit = true;
+            $details = $cSiparis->getSiparisDetay(['id' => $order_row->ID]);
+            $cart_items = [];
+            if ($details) {
+                foreach ($details as $d) {
+                    $extras_rows = $cSiparis->getSiparisDetayEkstra(['siparis_detay_id' => $d->ID]);
+                    $extras = [];
+                    if ($extras_rows) {
+                        foreach ($extras_rows as $ex) {
+                            $extras[] = [
+                                'id' => intval($ex->MALZEME_ID),
+                                'name' => $ex->MALZEME_AD,
+                                'price' => floatval($ex->FIYAT)
+                            ];
+                        }
+                    }
+                    $cart_items[] = [
+                        'id' => intval($d->URUN_ID),
+                        'name' => $d->URUN,
+                        'price' => floatval($d->FIYAT),
+                        'quantity' => intval($d->ADET),
+                        'extras' => $extras
+                    ];
+                }
+            }
+            $cart_js = json_encode($cart_items);
+        }
+    }
 ?>
 <!Doctype html>
 <html lang="en" class="light-style layout-navbar-fixed layout-menu-fixed layout-compact" dir="ltr" data-theme="theme-default" data-assets-path="/assets/" data-template="vertical-menu-template" data-style="light">
     <head>
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0" />
-        <title> <?=$row_site->TITLE?> | Yeni Sipariş </title>
+        <title> <?=$row_site->TITLE?> | <?=($is_edit) ? 'Siparişi Düzenle' : 'Yeni Sipariş'?> </title>
         <?=$cTheme->Linkler()?>
         <style type="text/css">
             .cart-item-row:hover {
@@ -21,6 +65,14 @@
                 justify-content: space-between;
                 align-items: center;
                 margin-bottom: 8px;
+            }
+            .btn-extra-remove {
+                background: none;
+                border: none;
+                color: #ff3e1d;
+                padding: 0 4px;
+                font-weight: bold;
+                cursor: pointer;
             }
         </style>
     </head>
@@ -34,8 +86,8 @@
                         <div class="container-xxl flex-grow-1 container-p-y">
                             <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-6 gap-6">
                                 <div class="d-flex flex-column justify-content-center">
-                                    <h4 class="mb-1">Yeni Sipariş Oluştur</h4>
-                                    <p class="mb-0">Mağaza içi (walk-in) veya diğer kanallar için manuel sipariş paneli</p>
+                                    <h4 class="mb-1"><?=($is_edit) ? "Sipariş Düzenle (No: #{$order_row->SIPARIS_NO})" : "Yeni Sipariş Oluştur"?></h4>
+                                    <p class="mb-0">Manuel sipariş paneli</p>
                                 </div>
                             </div>
                             
@@ -115,38 +167,53 @@
                                                 <div class="col-md-6">
                                                     <div class="form-floating form-floating-outline">
                                                         <select id="kaynak" class="select2 form-select" data-style="btn-default">
-                                                            <option value="Mağaza" selected>Mağaza</option>
-                                                            <option value="Trendyol">Trendyol</option>
-                                                            <option value="Yemeksepeti">Yemeksepeti</option>
-                                                            <option value="Getir">Getir</option>
+                                                            <?foreach($rows_kaynaklar as $k){?>
+                                                                <option value="<?=$k->KAYNAK?>" <?=$is_edit && $order_row->KAYNAK == $k->KAYNAK ? 'selected' : (!$is_edit && $k->KAYNAK == 'Mağaza' ? 'selected' : '')?>><?=$k->KAYNAK?></option>
+                                                            <?}?>
                                                         </select>
                                                         <label for="kaynak">Kaynak</label>
                                                     </div>
                                                 </div>
                                                 <div class="col-md-6">
                                                     <div class="form-floating form-floating-outline">
+                                                        <select id="siparis_tipi" class="select2 form-select" data-style="btn-default">
+                                                            <?foreach($rows_tipler as $t){?>
+                                                                <option value="<?=$t->SIPARIS_TIPI?>" <?=$is_edit && $order_row->SIPARIS_TIPI == $t->SIPARIS_TIPI ? 'selected' : (!$is_edit && $t->SIPARIS_TIPI == 'Gel Al' ? 'selected' : '')?>><?=$t->SIPARIS_TIPI?></option>
+                                                            <?}?>
+                                                        </select>
+                                                        <label for="siparis_tipi">Sipariş Tipi</label>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="form-floating form-floating-outline">
                                                         <select id="odeme" class="select2 form-select" data-style="btn-default">
-                                                            <option value="Nakit" selected>Nakit</option>
-                                                            <option value="Kredi Kartı">Kredi Kartı</option>
+                                                            <option value="Nakit" <?=$is_edit && $order_row->ODEME == 'Nakit' ? 'selected' : ''?>>Nakit</option>
+                                                            <option value="Kredi Kartı" <?=$is_edit && $order_row->ODEME == 'Kredi Kartı' ? 'selected' : ''?>>Kredi Kartı</option>
                                                         </select>
                                                         <label for="odeme">Ödeme Yöntemi</label>
                                                     </div>
                                                 </div>
+                                                <div class="col-md-6">
+                                                    <div class="form-floating form-floating-outline">
+                                                        <input type="number" id="input_hazirlanma" class="form-control" value="<?=$is_edit ? intval($order_row->HAZIRLANMA_SURESI) : ''?>" placeholder="30">
+                                                        <label for="input_hazirlanma">Hazırlanma Süresi (Dakika)</label>
+                                                    </div>
+                                                </div>
                                                 <div class="col-md-12">
                                                     <div class="form-floating form-floating-outline">
-                                                        <input type="text" id="musteri" class="form-control" value="Mağaza Müşterisi" placeholder="Müşteri Adı Soyadı">
+                                                        <input type="text" id="musteri" class="form-control" value="<?=$is_edit ? htmlspecialchars($order_row->MUSTERI) : 'Mağaza Müşterisi'?>" placeholder="Müşteri Adı Soyadı">
                                                         <label for="musteri">Müşteri Adı Soyadı</label>
                                                     </div>
                                                 </div>
                                                 <div class="col-md-12">
                                                     <div class="form-floating form-floating-outline">
-                                                        <input type="text" id="telefon" class="form-control" placeholder="0555 555 5555">
+                                                        <input type="text" id="telefon" class="form-control" value="<?=$is_edit ? htmlspecialchars($order_row->TELEFON) : ''?>" placeholder="0555 555 5555">
                                                         <label for="telefon">Telefon (Opsiyonel)</label>
                                                     </div>
                                                 </div>
                                                 <div class="col-md-12">
                                                     <div class="form-floating form-floating-outline">
-                                                        <textarea id="siparis_not" class="form-control" placeholder="Sipariş Notu (Opsiyonel)" style="height: 100px;"></textarea>
+                                                        <textarea id="siparis_not" class="form-control" placeholder="Sipariş Notu (Opsiyonel)" style="height: 100px;"><?=$is_edit ? htmlspecialchars($order_row->SIPARIS_NOT) : ''?></textarea>
                                                         <label for="siparis_not">Sipariş Notu (Opsiyonel)</label>
                                                     </div>
                                                 </div>
@@ -164,12 +231,27 @@
                                                 <span class="text-muted">Ara Toplam:</span>
                                                 <span class="fw-semibold"><span id="lbl_subtotal">0.00</span> ₺</span>
                                             </div>
+
+                                            <div class="totals-list-item">
+                                                <span class="text-muted">Ekstra Toplam:</span>
+                                                <span class="fw-semibold"><span id="lbl_extras_total">0.00</span> ₺</span>
+                                            </div>
                                             
                                             <div class="totals-list-item align-items-center">
                                                 <span class="text-muted">İndirim Tutar (Opsiyonel):</span>
                                                 <div style="width: 130px;">
                                                     <div class="input-group input-group-sm">
-                                                        <input type="number" id="input_indirim" class="form-control text-end" value="0" min="0" step="0.01">
+                                                        <input type="number" id="input_indirim" class="form-control text-end" value="<?=$is_edit ? floatval($order_row->INDIRIM_TUTAR) : 0?>" min="0" step="0.01">
+                                                        <span class="input-group-text">₺</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div class="totals-list-item align-items-center mt-2">
+                                                <span class="text-muted">Teslimat Ücreti (Opsiyonel):</span>
+                                                <div style="width: 130px;">
+                                                    <div class="input-group input-group-sm">
+                                                        <input type="number" id="input_teslimat" class="form-control text-end" value="<?=$is_edit ? floatval($order_row->TESLIMAT_UCRETI) : 0?>" min="0" step="0.01">
                                                         <span class="input-group-text">₺</span>
                                                     </div>
                                                 </div>
@@ -183,7 +265,7 @@
                                             </div>
 
                                             <button type="button" id="btn_siparis_olustur" class="btn btn-success btn-lg w-100 py-3 waves-effect waves-light">
-                                                <i class="ri-check-line me-2"></i>Siparişi Tamamla
+                                                <i class="ri-check-line me-2"></i><?=($is_edit) ? 'Değişiklikleri Kaydet' : 'Siparişi Tamamla'?>
                                             </button>
                                         </div>
                                     </div>
@@ -198,19 +280,56 @@
             <div class="layout-overlay layout-menu-toggle"></div>
             <div class="drag-target"></div>
         </div>
+
+        <!-- Ekstra Malzeme Ekleme Modalı -->
+        <div class="modal fade" id="extraModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Ekstra Malzeme Ekle</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="hidden" id="modal_item_idx">
+                        <div class="form-floating form-floating-outline">
+                            <select id="modal_select_extra" class="select2 form-select" data-dropdown-parent="#extraModal">
+                                <option value="">-- Malzeme Seçiniz --</option>
+                                <?foreach($rows_ekstralar as $ex){?>
+                                    <option value="<?=$ex->ID?>" data-fiyat="<?=$ex->EKSTRA_FIYAT?>"><?=$ex->MALZEME?> (<?=FormatSayi::sayi($ex->EKSTRA_FIYAT)?> ₺)</option>
+                                <?}?>
+                            </select>
+                            <label for="modal_select_extra">Ekstra Malzemeler</label>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Kapat</button>
+                        <button type="button" id="btn_modal_extra_save" class="btn btn-primary">Ekle</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <?=$cTheme->Scriptler()?>
     </body>
 </html>
 
 <script type="text/javascript">
-    // Local Product Registry for quick price lookup
+    // Local registries
     var activeProducts = {
         <?foreach ($rows_urunler as $u) {
             echo intval($u->ID) . ": { id: " . intval($u->ID) . ", name: '" . addslashes($u->URUN) . "', price: " . floatval($u->FIYAT) . " },\n";
         }?>
     };
 
-    var cart = [];
+    var activeExtras = {
+        <?foreach ($rows_ekstralar as $ex) {
+            echo intval($ex->ID) . ": { id: " . intval($ex->ID) . ", name: '" . addslashes($ex->MALZEME) . "', price: " . floatval($ex->EKSTRA_FIYAT) . " },\n";
+        }?>
+    };
+
+    var cart = <?=$cart_js?>;
+    var isEdit = <?=$is_edit ? 'true' : 'false'?>;
+    var orderId = <?=$is_edit ? intval($order_row->ID) : 0?>;
 
     function renderCart() {
         var tbody = $("#cart_tbody");
@@ -219,20 +338,49 @@
         if (cart.length === 0) {
             $("#empty_cart_row").show();
             $("#lbl_subtotal").text("0.00");
+            $("#lbl_extras_total").text("0.00");
             $("#lbl_total").text("0.00");
             return;
         }
 
         $("#empty_cart_row").hide();
         var subtotal = 0;
+        var extras_total = 0;
 
         cart.forEach(function(item, idx) {
-            var itemTotal = item.price * item.quantity;
-            subtotal += itemTotal;
+            var itemBaseTotal = item.price * item.quantity;
+            subtotal += itemBaseTotal;
+            
+            var itemExtrasTotal = 0;
+            var extrasHtml = "";
+            if (item.extras && item.extras.length > 0) {
+                item.extras.forEach(function(ex, exIdx) {
+                    var exTotal = ex.price * item.quantity;
+                    extras_total += exTotal;
+                    itemExtrasTotal += exTotal;
+                    extrasHtml += `
+                        <div class="d-flex justify-content-between align-items-center mb-1 text-success text-nowrap">
+                            <span>+ ${ex.name}</span>
+                            <span>
+                                ${ex.price.toFixed(2)} ₺
+                                <button type="button" class="btn-extra-remove" data-item-idx="${idx}" data-extra-idx="${exIdx}">&times;</button>
+                            </span>
+                        </div>
+                    `;
+                });
+            }
+
+            var itemGrandTotal = itemBaseTotal + itemExtrasTotal;
 
             var rowHtml = `
                 <tr class="cart-item-row" data-id="${item.id}">
-                    <td><strong>${item.name}</strong></td>
+                    <td>
+                        <div><strong>${item.name}</strong></div>
+                        <div class="ps-2 mt-1 small">
+                            ${extrasHtml}
+                            <button type="button" class="btn btn-link text-primary p-0 btn-extra-add mt-1 small" data-idx="${idx}">+ Ekstra Malzeme Ekle</button>
+                        </div>
+                    </td>
                     <td class="text-end">${item.price.toFixed(2)} ₺</td>
                     <td class="text-center">
                         <div class="input-group input-group-sm m-auto" style="max-width: 100px;">
@@ -241,7 +389,7 @@
                             <button type="button" class="btn btn-outline-secondary px-2 btn-qty-inc" data-idx="${idx}">+</button>
                         </div>
                     </td>
-                    <td class="text-end fw-semibold">${itemTotal.toFixed(2)} ₺</td>
+                    <td class="text-end fw-semibold">${itemGrandTotal.toFixed(2)} ₺</td>
                     <td class="text-center">
                         <button type="button" class="btn btn-link text-danger p-0 btn-item-remove" data-idx="${idx}">
                             <i class="ri-delete-bin-line ri-20px"></i>
@@ -253,17 +401,25 @@
         });
 
         $("#lbl_subtotal").text(subtotal.toFixed(2));
+        $("#lbl_extras_total").text(extras_total.toFixed(2));
         updateTotals();
     }
 
     function updateTotals() {
         var subtotal = parseFloat($("#lbl_subtotal").text()) || 0;
+        var extras_total = parseFloat($("#lbl_extras_total").text()) || 0;
         var discount = parseFloat($("#input_indirim").val()) || 0;
         if (discount < 0) {
             discount = 0;
             $("#input_indirim").val(0);
         }
-        var total = subtotal - discount;
+        var delivery = parseFloat($("#input_teslimat").val()) || 0;
+        if (delivery < 0) {
+            delivery = 0;
+            $("#input_teslimat").val(0);
+        }
+        
+        var total = (subtotal + extras_total) - discount + delivery;
         if (total < 0) {
             total = 0;
         }
@@ -271,6 +427,9 @@
     }
 
     $(document).ready(function() {
+        // Initial cart render if edit mode
+        renderCart();
+
         // Add item to cart
         $("#btn_urun_ekle").on("click", function() {
             var selectVal = $("#select_urun").val();
@@ -305,7 +464,8 @@
                     id: prod.id,
                     name: prod.name,
                     price: prod.price,
-                    quantity: quantity
+                    quantity: quantity,
+                    extras: []
                 });
             }
 
@@ -343,8 +503,68 @@
             notyf.success("Ürün sepetten çıkarıldı.");
         });
 
-        // Discount input change
-        $("#input_indirim").on("input change", function() {
+        // Extra modal trigger
+        $(document).on("click", ".btn-extra-add", function() {
+            var idx = $(this).data("idx");
+            $("#modal_item_idx").val(idx);
+            $("#modal_select_extra").val("").trigger("change");
+            
+            // Show modal using Bootstrap API
+            var extraModal = new bootstrap.Modal(document.getElementById('extraModal'));
+            extraModal.show();
+        });
+
+        // Save extra from modal
+        $("#btn_modal_extra_save").on("click", function() {
+            var idx = parseInt($("#modal_item_idx").val());
+            var extraId = $("#modal_select_extra").val();
+            if (!extraId) {
+                notyf.error("Lütfen bir malzeme seçin.");
+                return;
+            }
+            var extra = activeExtras[extraId];
+            if (!cart[idx].extras) {
+                cart[idx].extras = [];
+            }
+            // Check if extra already added to this item
+            var exists = false;
+            for(var i=0; i<cart[idx].extras.length; i++) {
+                if(cart[idx].extras[i].id == extra.id) {
+                    exists = true;
+                    break;
+                }
+            }
+            if(exists) {
+                notyf.error("Bu ekstra malzeme zaten eklenmiş.");
+                return;
+            }
+
+            cart[idx].extras.push({
+                id: extra.id,
+                name: extra.name,
+                price: extra.price
+            });
+
+            // Hide modal
+            var modalEl = document.getElementById('extraModal');
+            var modalInstance = bootstrap.Modal.getInstance(modalEl);
+            modalInstance.hide();
+            
+            renderCart();
+            notyf.success("Ekstra malzeme eklendi.");
+        });
+
+        // Remove extra material
+        $(document).on("click", ".btn-extra-remove", function() {
+            var itemIdx = $(this).data("item-idx");
+            var extraIdx = $(this).data("extra-idx");
+            cart[itemIdx].extras.splice(extraIdx, 1);
+            renderCart();
+            notyf.success("Ekstra malzeme çıkarıldı.");
+        });
+
+        // Inputs changes
+        $("#input_indirim, #input_teslimat").on("input change", function() {
             updateTotals();
         });
 
@@ -362,14 +582,17 @@
             var postData = {
                 controller: 'siparis',
                 action: 'siparis_ekle',
+                id: orderId,
                 kaynak: $("#kaynak").val(),
+                siparis_tipi: $("#siparis_tipi").val(),
+                odeme: $("#odeme").val(),
                 musteri: $("#musteri").val(),
                 telefon: $("#telefon").val(),
-                odeme: $("#odeme").val(),
                 siparis_not: $("#siparis_not").val(),
                 indirim_tutar: $("#input_indirim").val(),
-                urun_id: cart.map(function(item) { return item.id; }),
-                adet: cart.map(function(item) { return item.quantity; })
+                teslimat_ucreti: $("#input_teslimat").val(),
+                hazirlanma_suresi: $("#input_hazirlanma").val(),
+                cart_data: JSON.stringify(cart)
             };
 
             $.ajax({

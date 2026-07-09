@@ -133,17 +133,21 @@
                                             <tbody>
                                                 <?foreach ($rows as $key => $row) {
                                                     $row_toplam->TUTAR += $row->TUTAR;
+                                                    $duzenle_url = "/views/siparis/siparis_detay.php?route=siparis/siparis_listesi&id=" . $row->ID . "&token=" . $row->TOKEN;
+                                                    if (in_array($row->KAYNAK, ['Mağaza', 'Telefon'])) {
+                                                        $duzenle_url = "/views/siparis/yeni_siparis.php?route=siparis/yeni_siparis&id=" . $row->ID . "&token=" . $row->TOKEN;
+                                                    }
                                                     ?>
-                                                    <tr class="table-row-clickable" data-href="/views/siparis/siparis_detay.php?route=siparis/siparis_listesi&id=<?=$row->ID?>&token=<?=$row->TOKEN?>">
+                                                    <tr class="table-row-clickable" data-href="<?=$duzenle_url?>">
                                                         <td><?=($key+1)?></td>
-                                                        <td align="center"><a href="/views/siparis/siparis_detay.php?route=siparis/siparis_listesi&id=<?=$row->ID?>&token=<?=$row->TOKEN?>" data-bs-toggle="tooltip" title="Sipariş Detayı">#<?=$row->SIPARIS_NO?></a></td>
+                                                        <td align="center"><a href="<?=$duzenle_url?>" data-bs-toggle="tooltip" title="Sipariş Detayı">#<?=$row->SIPARIS_NO?></a></td>
                                                         <td nowrap><?=$row->KAYNAK?></td>
                                                         <td nowrap><?=$row->MUSTERI?></td>
                                                         <td nowrap><?=FormatSayi::sayi($row->TUTAR)?> ₺</td>
                                                         <td nowrap align="center"><?=fncSiparisSurecSpan($row->SIPARIS_SUREC_ID)?></td>
                                                         <td nowrap align="center"><?=FormatTarih::tarih($row->SIPARIS_TARIH)?></td>
                                                         <td nowrap>
-                                                            <a href="/views/siparis/siparis_detay.php?route=siparis/siparis_listesi&id=<?=$row->ID?>&token=<?=$row->TOKEN?>" data-bs-toggle="tooltip" class="btn btn-primary btn-icon btn-sm" title="Düzenle"> <i class="ri-arrow-right-double-fill"></i></a>
+                                                            <a href="<?=$duzenle_url?>" data-bs-toggle="tooltip" class="btn btn-primary btn-icon btn-sm" title="Düzenle"> <i class="ri-arrow-right-double-fill"></i></a>
                                                         </td>
                                                     </tr>
                                                 <?}?>

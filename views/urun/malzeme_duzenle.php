@@ -59,6 +59,24 @@
                                                             </div>
                                                         </div>
                                                         <div class="col-md-6">
+                                                            <div class="input-group input-group-merge">
+                                                                <span class="input-group-text">₺</span>
+                                                                <div class="form-floating form-floating-outline">
+                                                                    <input type="text" class="form-control decimal" id="ekstra_fiyat" name="ekstra_fiyat" value="<?=FormatSayi::sayi($row->EKSTRA_FIYAT)?>" placeholder="6"/>
+                                                                    <label>Ekstra Fiyat</label>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <div class="form-floating form-floating-outline">
+                                                                <select name="ekstra" id="ekstra" class="select2 form-select" data-style="btn-default">
+                                                                    <option value="1" <?=$row->EKSTRA == '1' ? 'selected' : ''?>>✅ Göster</option>
+                                                                    <option value="0" <?=$row->EKSTRA == '0' ? 'selected' : ''?>>❌ Gösterme</option>
+                                                                </select>
+                                                                <label>Ekstra Malzeme Listesinde Göster</label>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-md-6">
                                                             <div class="form-floating form-floating-outline">
                                                                 <select name="urun_id" id="urun_id" class="select2 form-select" data-style="btn-default">
                                                                     <?=$cUrun->Urunler()->setSeciniz()->setSecilen($row->URUN_ID)->getSelect("ID", "AD")?>

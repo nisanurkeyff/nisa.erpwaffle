@@ -98,6 +98,7 @@ class RaporController
         $data = array();
         $sql = "SELECT 
                     SD.*,
+                    (SELECT COALESCE(SUM(SE.FIYAT), 0) FROM SIPARIS_EKSTRA AS SE WHERE SE.SIPARIS_DETAY_ID = SD.ID) * SD.ADET AS EKSTRA_TUTAR,
                     S.SIPARIS_TARIH,
                     DATE(S.SIPARIS_TARIH) AS SIPARIS_TARIH_DATE,
                     S.MUSTERI,
@@ -147,6 +148,21 @@ class RaporController
 
         $sql .= $sayfalama->getLimitOffset();
         $rows = DB::get($sql, $data);
+
+        if (!empty($rows)) {
+            $detay_ids = array_column($rows, 'ID');
+            $placeholders = implode(',', array_fill(0, count($detay_ids), '?'));
+            $extras = DB::get("SELECT SIPARIS_DETAY_ID, MALZEME_AD, FIYAT FROM SIPARIS_EKSTRA WHERE SIPARIS_DETAY_ID IN ($placeholders)", $detay_ids);
+            $extras_by_detay = array();
+            if (is_array($extras)) {
+                foreach ($extras as $ex) {
+                    $extras_by_detay[$ex->SIPARIS_DETAY_ID][] = $ex;
+                }
+            }
+            foreach ($rows as $row) {
+                $row->ekstralar = isset($extras_by_detay[$row->ID]) ? $extras_by_detay[$row->ID] : array();
+            }
+        }
 
         return [
             'rows' => $rows,

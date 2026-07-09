@@ -1775,6 +1775,8 @@ class UrunController {
                                         URUN_ID         = :URUN_ID,
                                         ACIKLAMA        = :ACIKLAMA,
                                         FIYAT           = :FIYAT,
+                                        EKSTRA_FIYAT    = :EKSTRA_FIYAT,
+                                        EKSTRA          = :EKSTRA,
                                         DURUM           = :DURUM,
                                         KAYIT_YAPAN_ID  = :KAYIT_YAPAN_ID,
                                         TOKEN           = MD5(NOW())
@@ -1783,6 +1785,8 @@ class UrunController {
         $data[":URUN_ID"]           = $_REQUEST['urun_id'];
         $data[":ACIKLAMA"]          = trim($_REQUEST['aciklama']);
         $data[":FIYAT"]             = FormatSayi::sayi2db($_REQUEST['fiyat']);
+        $data[":EKSTRA_FIYAT"]      = FormatSayi::sayi2db($_REQUEST['ekstra_fiyat']);
+        $data[":EKSTRA"]            = $_REQUEST['ekstra'] ? $_REQUEST['ekstra'] : '0';
         $data[":DURUM"]             = $_REQUEST['durum'];
         $data[":KAYIT_YAPAN_ID"]    = $_SESSION['kullanici_id'];
         $id = DB::insert($sql, $data);
@@ -1840,6 +1844,8 @@ class UrunController {
                                     URUN_ID         = :URUN_ID,
                                     ACIKLAMA        = :ACIKLAMA,
                                     FIYAT           = :FIYAT,
+                                    EKSTRA_FIYAT    = :EKSTRA_FIYAT,
+                                    EKSTRA          = :EKSTRA,
                                     DURUM           = :DURUM,
                                     GTARIH          = NOW()
                                 WHERE ID = :ID
@@ -1848,6 +1854,8 @@ class UrunController {
         $data[":URUN_ID"]           = $_REQUEST['urun_id'];
         $data[":ACIKLAMA"]          = trim($_REQUEST['aciklama']);
         $data[":FIYAT"]             = FormatSayi::sayi2db($_REQUEST['fiyat']);
+        $data[":EKSTRA_FIYAT"]      = FormatSayi::sayi2db($_REQUEST['ekstra_fiyat']);
+        $data[":EKSTRA"]            = $_REQUEST['ekstra'] ? $_REQUEST['ekstra'] : '0';
         $data[":DURUM"]             = $_REQUEST['durum'];
         $data[":ID"]                = $row->ID;
         $update = DB::exec($sql, $data);

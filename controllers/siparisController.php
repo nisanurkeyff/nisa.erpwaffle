@@ -175,7 +175,7 @@ class SiparisController {
             return $result;
         }
 
-        if($row->SUREC_ID != 1){
+        if($row->SIPARIS_SUREC_ID != 1){
             $result["HATA"]          = TRUE;
             $result["ACIKLAMA"]      = "Sadece 'Sipariş Alındı' Süreçinde Sipariş Silinebilir!";
             return $result;
@@ -219,11 +219,10 @@ class SiparisController {
         }
 
         $data = array();
-        $sql = "UPDATE SIPARIS SET  SUREC_ID  = :SUREC_ID,
-                                    GTARIH    = NOW()
+        $sql = "UPDATE SIPARIS SET  SIPARIS_SUREC_ID  = :SIPARIS_SUREC_ID
                                 WHERE ID = :ID
                                 "; 
-        $data[':SUREC_ID']     = 2;
+        $data[':SIPARIS_SUREC_ID']     = 2;
         $data[':ID']           = $row->ID;
         $update = DB::exec($sql, $data);
 
@@ -285,11 +284,10 @@ class SiparisController {
         }
 
         $data = array();
-        $sql = "UPDATE SIPARIS SET  SUREC_ID  = :SUREC_ID,
-                                    GTARIH    = NOW()
+        $sql = "UPDATE SIPARIS SET  SIPARIS_SUREC_ID  = :SIPARIS_SUREC_ID
                                 WHERE ID = :ID
                                 "; 
-        $data[':SUREC_ID']     = 3;
+        $data[':SIPARIS_SUREC_ID']     = 3;
         $data[':ID']           = $row->ID;
         $update = DB::exec($sql, $data);
 
@@ -336,11 +334,10 @@ class SiparisController {
         }
 
         $data = array();
-        $sql = "UPDATE SIPARIS SET  SUREC_ID  = :SUREC_ID,
-                                    GTARIH    = NOW()
+        $sql = "UPDATE SIPARIS SET  SIPARIS_SUREC_ID  = :SIPARIS_SUREC_ID
                                 WHERE ID = :ID
                                 "; 
-        $data[':SUREC_ID']     = 10;
+        $data[':SIPARIS_SUREC_ID']     = 10;
         $data[':ID']           = $row->ID;
         $update = DB::exec($sql, $data);
 
@@ -357,6 +354,36 @@ class SiparisController {
         DB::insert($sql, $data);
 
         if($update > 0){
+            // Stock reduction logic
+            // 1. Deduct recipe materials (standard recipe)
+            $order_details = DB::get("SELECT ID, URUN_ID, ADET FROM SIPARIS_DETAY WHERE SIPARIS_ID = :ID", [':ID' => $row->ID]);
+            if (is_array($order_details)) {
+                foreach ($order_details as $det) {
+                    $recipe = DB::get("SELECT MALZEME_ID, MIKTAR FROM URUN_RECETE WHERE URUN_ID = :URUN_ID", [':URUN_ID' => $det->URUN_ID]);
+                    if (is_array($recipe)) {
+                        foreach ($recipe as $rec) {
+                            $deduct_qty = floatval($rec->MIKTAR) * intval($det->ADET);
+                            DB::exec("UPDATE MALZEME SET STOK = STOK - :QTY WHERE ID = :MID", [
+                                ':QTY' => $deduct_qty,
+                                ':MID' => $rec->MALZEME_ID
+                            ]);
+                        }
+                    }
+                    
+                    // 2. Deduct extra materials
+                    $extras = DB::get("SELECT MALZEME_ID FROM SIPARIS_EKSTRA WHERE SIPARIS_DETAY_ID = :DET_ID", [':DET_ID' => $det->ID]);
+                    if (is_array($extras)) {
+                        foreach ($extras as $ex) {
+                            $deduct_qty = 1 * intval($det->ADET);
+                            DB::exec("UPDATE MALZEME SET STOK = STOK - :QTY WHERE ID = :MID", [
+                                ':QTY' => $deduct_qty,
+                                ':MID' => $ex->MALZEME_ID
+                            ]);
+                        }
+                    }
+                }
+            }
+
             $result["HATA"]      = FALSE;
             $result["ACIKLAMA"]  = "Sipariş Tamamlandı.";
         }else{
@@ -387,13 +414,13 @@ class SiparisController {
             return $result;
         }
 
-        if($row->SUREC_ID == 11){
+        if($row->SIPARIS_SUREC_ID == 11){
             $result["HATA"]          = TRUE;
             $result["ACIKLAMA"]      = "Sipariş İptal Edilmiş!";
             return $result;
         }
 
-        if(!in_array($row->SUREC_ID,array(1,2))){
+        if(!in_array($row->SIPARIS_SUREC_ID,array(1,2))){
             $result["HATA"]          = TRUE;
             $result["ACIKLAMA"]      = "Sadece 'Siparis Alındı' ve 'Sipariş Hazırlanıyor' süreçinde iptal edilebilir!";
             return $result;
@@ -408,11 +435,10 @@ class SiparisController {
         }
 
         $data = array();
-        $sql = "UPDATE SIPARIS SET  SUREC_ID  = :SUREC_ID,
-                                    GTARIH    = NOW()
+        $sql = "UPDATE SIPARIS SET  SIPARIS_SUREC_ID  = :SIPARIS_SUREC_ID
                                 WHERE ID = :ID
                                 "; 
-        $data[':SUREC_ID']     = 11;
+        $data[':SIPARIS_SUREC_ID']     = 11;
         $data[':ID']           = $row->ID;
         $update = DB::exec($sql, $data);
 
@@ -521,11 +547,10 @@ class SiparisController {
         }
 
         $data = array();
-        $sql = "UPDATE SIPARIS SET  SUREC_ID  = :SUREC_ID,
-                                    GTARIH    = NOW()
+        $sql = "UPDATE SIPARIS SET  SIPARIS_SUREC_ID  = :SIPARIS_SUREC_ID
                                 WHERE ID = :ID
                                 "; 
-        $data[':SUREC_ID']     = 6;
+        $data[':SIPARIS_SUREC_ID']     = 6;
         $data[':ID']           = $row->ID;
         $update = DB::exec($sql, $data);
 
@@ -573,11 +598,10 @@ class SiparisController {
         }
 
         $data = array();
-        $sql = "UPDATE SIPARIS SET  SUREC_ID  = :SUREC_ID,
-                                    GTARIH    = NOW()
+        $sql = "UPDATE SIPARIS SET  SIPARIS_SUREC_ID  = :SIPARIS_SUREC_ID
                                 WHERE ID = :ID
                                 "; 
-        $data[':SUREC_ID']     = 7;
+        $data[':SIPARIS_SUREC_ID']     = 7;
         $data[':ID']           = $row->ID;
         $update = DB::exec($sql, $data);
 
@@ -609,14 +633,14 @@ class SiparisController {
 
         $data = array();
         $sql = "SELECT
-                    S.SUREC_ID AS ID,
+                    S.SIPARIS_SUREC_ID AS ID,
                     COUNT(S.ID) AS SAY
                 FROM SIPARIS AS S
-                    LEFT JOIN SUREC AS SS ON SS.ID = S.SUREC_ID
-                WHERE S.ODEME = 1 AND S.SUREC_ID > 0
+                    LEFT JOIN SIPARIS_SUREC AS SS ON SS.ID = S.SIPARIS_SUREC_ID
+                WHERE S.ODEME = 1 AND S.SIPARIS_SUREC_ID > 0
                 ";
 
-        $sql .= " GROUP BY S.SUREC_ID";
+        $sql .= " GROUP BY S.SIPARIS_SUREC_ID";
         $rows = DB::get($sql, $data);
         $rows = arrayIndex($rows);
         return $rows;
@@ -638,8 +662,7 @@ class SiparisController {
         $data = array();
         $sql = "UPDATE SIPARIS SET  KARGO_FIRMA         = :KARGO_FIRMA,
                                     KARGO_TAKIP_NO      = :KARGO_TAKIP_NO,
-                                    IADE_KARGO_TAKIP_NO = :IADE_KARGO_TAKIP_NO,
-                                    GTARIH              = NOW()
+                                    IADE_KARGO_TAKIP_NO = :IADE_KARGO_TAKIP_NO
                                 WHERE ID = :ID
                                 ";
         $data[":KARGO_FIRMA"]           = trim($_REQUEST['kargo_firma']);
@@ -793,53 +816,96 @@ class SiparisController {
         if (!in_array($_SESSION['yetki_id'], array(1, 2, 3))) {
             return [
                 "HATA" => true,
-                "ACIKLAMA" => "Sipariş eklemek için yetkiniz yok!"
+                "ACIKLAMA" => "Sipariş eklemek/düzenlemek için yetkiniz yok!"
             ];
         }
 
-        if (empty($_POST['urun_id']) || !is_array($_POST['urun_id'])) {
-            return [
-                "HATA" => true,
-                "ACIKLAMA" => "Lütfen en az bir ürün ekleyin."
-            ];
-        }
-
-        // Get prices and data for the selected products from the DB
-        $urun_ids = array_map('intval', $_POST['urun_id']);
-        $placeholders = implode(',', array_fill(0, count($urun_ids), '?'));
-        
-        $products = DB::get("SELECT ID, URUN, TRENDYOL_URUN_ID, FIYAT FROM URUN WHERE ID IN ($placeholders)", $urun_ids);
-        $products_index = array();
-        foreach ($products as $p) {
-            $products_index[$p->ID] = $p;
+        // Support both JSON cart_data and form arrays
+        if (isset($_POST['cart_data']) && !empty($_POST['cart_data'])) {
+            $cart = json_decode($_POST['cart_data'], true);
+            if (!is_array($cart) || empty($cart)) {
+                return [
+                    "HATA" => true,
+                    "ACIKLAMA" => "Lütfen en az bir ürün ekleyin."
+                ];
+            }
+            $urun_ids = [];
+            $quantities = [];
+            $extras_by_prod_idx = [];
+            foreach ($cart as $idx => $item) {
+                $urun_ids[$idx] = intval($item['id']);
+                $quantities[$idx] = intval($item['quantity']);
+                $extras_by_prod_idx[$idx] = isset($item['extras']) ? $item['extras'] : [];
+            }
+        } else {
+            if (empty($_POST['urun_id']) || !is_array($_POST['urun_id'])) {
+                return [
+                    "HATA" => true,
+                    "ACIKLAMA" => "Lütfen en az bir ürün ekleyin."
+                ];
+            }
+            $urun_ids = array_map('intval', $_POST['urun_id']);
+            $quantities = isset($_POST['adet']) ? array_map('intval', $_POST['adet']) : [];
+            $extras_by_prod_idx = [];
         }
 
         $subtotal = 0;
+        $extras_total = 0;
         $items_to_insert = array();
 
-        foreach ($_POST['urun_id'] as $idx => $prod_id_raw) {
-            $prod_id = intval($prod_id_raw);
-            $qty = isset($_POST['adet'][$idx]) ? intval($_POST['adet'][$idx]) : 0;
-            if ($qty < 1) {
-                continue;
+        if (!empty($urun_ids)) {
+            $placeholders = implode(',', array_fill(0, count($urun_ids), '?'));
+            $products = DB::get("SELECT ID, URUN, TRENDYOL_URUN_ID, FIYAT FROM URUN WHERE ID IN ($placeholders)", $urun_ids);
+            $products_index = array();
+            foreach ($products as $p) {
+                $products_index[$p->ID] = $p;
             }
-            if (!isset($products_index[$prod_id])) {
-                continue;
-            }
-            
-            $p = $products_index[$prod_id];
-            $unit_price = floatval($p->FIYAT);
-            $total_price = $unit_price * $qty;
-            $subtotal += $total_price;
 
-            $items_to_insert[] = [
-                'urun_id' => $p->ID,
-                'trendyol_urun_id' => $p->TRENDYOL_URUN_ID,
-                'urun_adi' => $p->URUN,
-                'fiyat' => $unit_price,
-                'adet' => $qty,
-                'tutar' => $total_price
-            ];
+            foreach ($urun_ids as $idx => $prod_id) {
+                $qty = isset($quantities[$idx]) ? intval($quantities[$idx]) : 0;
+                if ($qty < 1) {
+                    continue;
+                }
+                if (!isset($products_index[$prod_id])) {
+                    continue;
+                }
+                
+                $p = $products_index[$prod_id];
+                $unit_price = floatval($p->FIYAT);
+                $total_price = $unit_price * $qty;
+                $subtotal += $total_price;
+
+                $item_extras = [];
+                $item_extras_total = 0;
+                if (isset($extras_by_prod_idx[$idx]) && is_array($extras_by_prod_idx[$idx])) {
+                    $extra_m_ids = array_map('intval', array_column($extras_by_prod_idx[$idx], 'id'));
+                    if (!empty($extra_m_ids)) {
+                        $ex_placeholders = implode(',', array_fill(0, count($extra_m_ids), '?'));
+                        $extra_materials = DB::get("SELECT ID, MALZEME, EKSTRA_FIYAT FROM MALZEME WHERE ID IN ($ex_placeholders)", $extra_m_ids);
+                        foreach ($extra_materials as $em) {
+                            $ex_unit_price = floatval($em->EKSTRA_FIYAT);
+                            $ex_total_price = $ex_unit_price * $qty;
+                            $extras_total += $ex_total_price;
+                            $item_extras_total += $ex_total_price;
+                            $item_extras[] = [
+                                'id' => $em->ID,
+                                'name' => $em->MALZEME,
+                                'price' => $ex_unit_price
+                            ];
+                        }
+                    }
+                }
+
+                $items_to_insert[] = [
+                    'urun_id' => $p->ID,
+                    'trendyol_urun_id' => $p->TRENDYOL_URUN_ID,
+                    'urun_adi' => $p->URUN,
+                    'fiyat' => $unit_price,
+                    'adet' => $qty,
+                    'tutar' => $total_price + $item_extras_total,
+                    'extras' => $item_extras
+                ];
+            }
         }
 
         if (empty($items_to_insert)) {
@@ -853,7 +919,12 @@ class SiparisController {
         if ($indirim_tutar < 0) {
             $indirim_tutar = 0;
         }
-        $grand_total = $subtotal - $indirim_tutar;
+        $teslimat_ucreti = isset($_POST['teslimat_ucreti']) ? floatval($_POST['teslimat_ucreti']) : 0;
+        if ($teslimat_ucreti < 0) {
+            $teslimat_ucreti = 0;
+        }
+
+        $grand_total = ($subtotal + $extras_total) - $indirim_tutar + $teslimat_ucreti;
         if ($grand_total < 0) {
             $grand_total = 0;
         }
@@ -863,49 +934,211 @@ class SiparisController {
         $telefon = !empty($_POST['telefon']) ? trim($_POST['telefon']) : '';
         $odeme = !empty($_POST['odeme']) ? trim($_POST['odeme']) : 'Nakit';
         $siparis_not = !empty($_POST['siparis_not']) ? trim($_POST['siparis_not']) : '';
+        $siparis_tipi = !empty($_POST['siparis_tipi']) ? trim($_POST['siparis_tipi']) : 'Gel Al';
+        $hazirlanma_suresi = isset($_POST['hazirlanma_suresi']) && $_POST['hazirlanma_suresi'] !== '' ? intval($_POST['hazirlanma_suresi']) : null;
         
-        $siparis_no = 'M' . time();
-        $token = md5(microtime() . rand(1, 1000000));
-        $now = date('Y-m-d H:i:s');
+        $is_edit = isset($_POST['id']) && intval($_POST['id']) > 0;
+        $order_id = $is_edit ? intval($_POST['id']) : 0;
         $kayit_yapan_id = intval($_SESSION['kullanici_id']);
 
-        // Insert into SIPARIS
-        $data_siparis = array(
-            ':KAYNAK' => $kaynak,
-            ':SIPARIS_NO' => $siparis_no,
-            ':TUTAR' => $grand_total,
-            ':TELEFON' => $telefon,
-            ':MUSTERI' => $musteri,
-            ':ODEME' => $odeme,
-            ':SIPARIS_NOT' => $siparis_not,
-            ':SIPARIS_TARIH' => $now,
-            ':HAZIRLANMA_TARIH' => $now,
-            ':INDIRIM' => ($indirim_tutar > 0) ? 'İndirim' : '',
-            ':INDIRIM_TUTAR' => $indirim_tutar,
-            ':KAYIT_YAPAN_ID' => $kayit_yapan_id,
-            ':TOKEN' => $token
-        );
+        if ($is_edit) {
+            $old_order = DB::getRow("SELECT * FROM SIPARIS WHERE ID = :ID", [':ID' => $order_id]);
+            if (is_null($old_order->ID)) {
+                return [
+                    "HATA" => true,
+                    "ACIKLAMA" => "Düzenlenecek sipariş bulunamadı."
+                ];
+            }
+            $siparis_no = $old_order->SIPARIS_NO;
+            $token = $old_order->TOKEN;
 
-        $sql_siparis = "INSERT INTO SIPARIS SET 
-                            KAYNAK = :KAYNAK,
-                            SIPARIS_NO = :SIPARIS_NO,
-                            SIPARIS_SUREC_ID = 1,
-                            TUTAR = :TUTAR,
-                            TELEFON = :TELEFON,
-                            MUSTERI = :MUSTERI,
-                            ODEME = :ODEME,
-                            SIPARIS_NOT = :SIPARIS_NOT,
-                            SIPARIS_TARIH = :SIPARIS_TARIH,
-                            HAZIRLANMA_TARIH = :HAZIRLANMA_TARIH,
-                            INDIRIM = :INDIRIM,
-                            INDIRIM_TUTAR = :INDIRIM_TUTAR,
-                            KAYIT_YAPAN_ID = :KAYIT_YAPAN_ID,
-                            TOKEN = :TOKEN";
+            // Load old details and extras to compare changes
+            $old_details = DB::get("SELECT * FROM SIPARIS_DETAY WHERE SIPARIS_ID = :ID", [':ID' => $order_id]);
+            $old_items = array();
+            foreach ($old_details as $det) {
+                $extras_rows = DB::get("SELECT * FROM SIPARIS_EKSTRA WHERE SIPARIS_DETAY_ID = :DET_ID", [':DET_ID' => $det->ID]);
+                $extras = array();
+                foreach ($extras_rows as $ex) {
+                    $extras[$ex->MALZEME_ID] = $ex->MALZEME_AD;
+                }
+                $old_items[$det->URUN_ID] = [
+                    'adet' => $det->ADET,
+                    'urun' => $det->URUN,
+                    'extras' => $extras
+                ];
+            }
 
-        $siparis_id = DB::insert($sql_siparis, $data_siparis);
+            $logChanges = function($alan, $eski, $yeni, $aciklama = '') use ($order_id, $siparis_no) {
+                self::logEkle('Sipariş', $order_id, $siparis_no, 'Güncelleme', $alan, $eski, $yeni, $aciklama);
+            };
+
+            // Compare headers
+            if ($old_order->KAYNAK != $kaynak) {
+                $logChanges('Kaynak', $old_order->KAYNAK, $kaynak, "Sipariş kaynağı değiştirildi.");
+            }
+            if ($old_order->MUSTERI != $musteri) {
+                $logChanges('Müşteri', $old_order->MUSTERI, $musteri, "Müşteri adı soyadı değiştirildi.");
+            }
+            if ($old_order->TELEFON != $telefon) {
+                $logChanges('Telefon', $old_order->TELEFON, $telefon, "Telefon numarası değiştirildi.");
+            }
+            if ($old_order->ODEME != $odeme) {
+                $logChanges('Ödeme', $old_order->ODEME, $odeme, "Ödeme yöntemi değiştirildi.");
+            }
+            if ($old_order->SIPARIS_NOT != $siparis_not) {
+                $logChanges('Sipariş Notu', $old_order->SIPARIS_NOT, $siparis_not, "Sipariş notu değiştirildi.");
+            }
+            if ($old_order->SIPARIS_TIPI != $siparis_tipi) {
+                $logChanges('Sipariş Tipi', $old_order->SIPARIS_TIPI, $siparis_tipi, "Sipariş tipi değiştirildi.");
+            }
+            if (floatval($old_order->INDIRIM_TUTAR) != $indirim_tutar) {
+                $logChanges('İndirim', floatval($old_order->INDIRIM_TUTAR) . ' TL', $indirim_tutar . ' TL', "İndirim tutarı değiştirildi.");
+            }
+            if (floatval($old_order->TESLIMAT_UCRETI) != $teslimat_ucreti) {
+                $logChanges('Teslimat Ücreti', floatval($old_order->TESLIMAT_UCRETI) . ' TL', $teslimat_ucreti . ' TL', "Teslimat ücreti değiştirildi.");
+            }
+            if (intval($old_order->HAZIRLANMA_SURESI) != intval($hazirlanma_suresi)) {
+                $logChanges('Hazırlanma Süresi', intval($old_order->HAZIRLANMA_SURESI) . ' Dk', intval($hazirlanma_suresi) . ' Dk', "Hazırlanma süresi değiştirildi.");
+            }
+
+            // Compare items
+            $new_items = array();
+            foreach ($items_to_insert as $item) {
+                $new_items[$item['urun_id']] = [
+                    'adet' => $item['adet'],
+                    'urun' => $item['urun_adi'],
+                    'extras' => $item['extras']
+                ];
+            }
+
+            foreach ($old_items as $urun_id => $old_item) {
+                if (!isset($new_items[$urun_id])) {
+                    $logChanges('Ürün Çıkarıldı', $old_item['urun'], '', "{$old_item['urun']} siparişten çıkarıldı.");
+                }
+            }
+
+            foreach ($new_items as $urun_id => $new_item) {
+                if (!isset($old_items[$urun_id])) {
+                    $logChanges('Ürün Eklendi', '', $new_item['urun'], "{$new_item['urun']} siparişe eklendi.");
+                    foreach ($new_item['extras'] as $ex) {
+                        $logChanges('Ekstra Malzeme', '', "+ {$ex['name']} eklendi", "Siparişe {$new_item['urun']} için {$ex['name']} ekstrası eklendi.");
+                    }
+                } else {
+                    $old_item = $old_items[$urun_id];
+                    if ($old_item['adet'] != $new_item['adet']) {
+                        $logChanges('Ürün Adedi (' . $new_item['urun'] . ')', $old_item['adet'], $new_item['adet'], "{$new_item['urun']} adedi değiştirildi.");
+                    }
+                    $old_exts = $old_item['extras'];
+                    $new_exts = array();
+                    foreach ($new_item['extras'] as $ex) {
+                        $new_exts[$ex['id']] = $ex['name'];
+                    }
+                    foreach ($new_exts as $ex_id => $ex_name) {
+                        if (!isset($old_exts[$ex_id])) {
+                            $logChanges('Ekstra Malzeme', '', "+ $ex_name eklendi", "Siparişe {$new_item['urun']} için $ex_name ekstrası eklendi.");
+                        }
+                    }
+                    foreach ($old_exts as $ex_id => $ex_name) {
+                        if (!isset($new_exts[$ex_id])) {
+                            $logChanges('Ekstra Malzeme', "+ $ex_name eklendi", '', "Siparişten {$new_item['urun']} için $ex_name ekstrası çıkarıldı.");
+                        }
+                    }
+                }
+            }
+
+            $hazirlanma_tarih = $old_order->SIPARIS_TARIH;
+            if ($hazirlanma_suresi > 0) {
+                $hazirlanma_tarih = date('Y-m-d H:i:s', strtotime($old_order->SIPARIS_TARIH) + ($hazirlanma_suresi * 60));
+            }
+
+            $sql_siparis = "UPDATE SIPARIS SET 
+                                KAYNAK = :KAYNAK,
+                                TUTAR = :TUTAR,
+                                TELEFON = :TELEFON,
+                                MUSTERI = :MUSTERI,
+                                ODEME = :ODEME,
+                                SIPARIS_NOT = :SIPARIS_NOT,
+                                HAZIRLANMA_TARIH = :HAZIRLANMA_TARIH,
+                                INDIRIM = :INDIRIM,
+                                INDIRIM_TUTAR = :INDIRIM_TUTAR,
+                                SIPARIS_TIPI = :SIPARIS_TIPI,
+                                TESLIMAT_UCRETI = :TESLIMAT_UCRETI,
+                                HAZIRLANMA_SURESI = :HAZIRLANMA_SURESI
+                            WHERE ID = :ID";
+            DB::exec($sql_siparis, [
+                ':KAYNAK' => $kaynak,
+                ':TUTAR' => $grand_total,
+                ':TELEFON' => $telefon,
+                ':MUSTERI' => $musteri,
+                ':ODEME' => $odeme,
+                ':SIPARIS_NOT' => $siparis_not,
+                ':HAZIRLANMA_TARIH' => $hazirlanma_tarih,
+                ':INDIRIM' => ($indirim_tutar > 0) ? 'İndirim' : '',
+                ':INDIRIM_TUTAR' => $indirim_tutar,
+                ':SIPARIS_TIPI' => $siparis_tipi,
+                ':TESLIMAT_UCRETI' => $teslimat_ucreti,
+                ':HAZIRLANMA_SURESI' => $hazirlanma_suresi,
+                ':ID' => $order_id
+            ]);
+
+            // Clear old detail & extras
+            DB::exec("DELETE FROM SIPARIS_EKSTRA WHERE SIPARIS_DETAY_ID IN (SELECT ID FROM SIPARIS_DETAY WHERE SIPARIS_ID = :ID)", [':ID' => $order_id]);
+            DB::exec("DELETE FROM SIPARIS_DETAY WHERE SIPARIS_ID = :ID", [':ID' => $order_id]);
+            $siparis_id = $order_id;
+
+        } else {
+            // Create new order
+            $siparis_no = 'M' . time();
+            $token = md5(microtime() . rand(1, 1000000));
+            $now = date('Y-m-d H:i:s');
+            
+            $hazirlanma_tarih = $now;
+            if ($hazirlanma_suresi > 0) {
+                $hazirlanma_tarih = date('Y-m-d H:i:s', strtotime($now) + ($hazirlanma_suresi * 60));
+            }
+
+            $data_siparis = array(
+                ':KAYNAK' => $kaynak,
+                ':SIPARIS_NO' => $siparis_no,
+                ':TUTAR' => $grand_total,
+                ':TELEFON' => $telefon,
+                ':MUSTERI' => $musteri,
+                ':ODEME' => $odeme,
+                ':SIPARIS_NOT' => $siparis_not,
+                ':SIPARIS_TARIH' => $now,
+                ':HAZIRLANMA_TARIH' => $hazirlanma_tarih,
+                ':INDIRIM' => ($indirim_tutar > 0) ? 'İndirim' : '',
+                ':INDIRIM_TUTAR' => $indirim_tutar,
+                ':SIPARIS_TIPI' => $siparis_tipi,
+                ':TESLIMAT_UCRETI' => $teslimat_ucreti,
+                ':HAZIRLANMA_SURESI' => $hazirlanma_suresi,
+                ':KAYIT_YAPAN_ID' => $kayit_yapan_id,
+                ':TOKEN' => $token
+            );
+
+            $sql_siparis = "INSERT INTO SIPARIS SET 
+                                KAYNAK = :KAYNAK,
+                                SIPARIS_NO = :SIPARIS_NO,
+                                SIPARIS_SUREC_ID = 1,
+                                TUTAR = :TUTAR,
+                                TELEFON = :TELEFON,
+                                MUSTERI = :MUSTERI,
+                                ODEME = :ODEME,
+                                SIPARIS_NOT = :SIPARIS_NOT,
+                                SIPARIS_TARIH = :SIPARIS_TARIH,
+                                HAZIRLANMA_TARIH = :HAZIRLANMA_TARIH,
+                                INDIRIM = :INDIRIM,
+                                INDIRIM_TUTAR = :INDIRIM_TUTAR,
+                                SIPARIS_TIPI = :SIPARIS_TIPI,
+                                TESLIMAT_UCRETI = :TESLIMAT_UCRETI,
+                                HAZIRLANMA_SURESI = :HAZIRLANMA_SURESI,
+                                KAYIT_YAPAN_ID = :KAYIT_YAPAN_ID,
+                                TOKEN = :TOKEN";
+
+            $siparis_id = DB::insert($sql_siparis, $data_siparis);
+        }
 
         if ($siparis_id > 0) {
-            // Insert each item into SIPARIS_DETAY
             foreach ($items_to_insert as $item) {
                 $data_detay = array(
                     ':SIPARIS_ID' => $siparis_id,
@@ -927,20 +1160,283 @@ class SiparisController {
                                 FIYAT = :FIYAT,
                                 ADET = :ADET,
                                 TUTAR = :TUTAR";
-                DB::insert($sql_detay, $data_detay);
+                $detay_id = DB::insert($sql_detay, $data_detay);
+
+                // Insert extras
+                if (!empty($item['extras'])) {
+                    foreach ($item['extras'] as $ex) {
+                        $sql_ekstra = "INSERT INTO SIPARIS_EKSTRA SET 
+                                            SIPARIS_DETAY_ID = :DETAY_ID,
+                                            MALZEME_ID = :MALZEME_ID,
+                                            MALZEME_AD = :MALZEME_AD,
+                                            FIYAT = :FIYAT";
+                        DB::insert($sql_ekstra, [
+                            ':DETAY_ID' => $detay_id,
+                            ':MALZEME_ID' => $ex['id'],
+                            ':MALZEME_AD' => $ex['name'],
+                            ':FIYAT' => $ex['price']
+                        ]);
+                    }
+                }
             }
 
             return [
                 "HATA" => false,
-                "ACIKLAMA" => "Sipariş başarıyla oluşturuldu.",
+                "ACIKLAMA" => $is_edit ? "Sipariş başarıyla güncellendi." : "Sipariş başarıyla oluşturuldu.",
                 "ID" => $siparis_id,
                 "TOKEN" => $token
             ];
         } else {
             return [
                 "HATA" => true,
-                "ACIKLAMA" => "Sipariş oluşturulurken bir hata oluştu."
+                "ACIKLAMA" => "Sipariş kaydedilirken bir hata oluştu."
             ];
         }
+    }
+
+    // GENERAL LOGGING METHOD
+    public static function logEkle($logTuru, $referansId, $referansNo, $islemTuru, $alan, $eskiDeger, $yeniDeger, $aciklama) {
+        $kullanici_id = isset($_SESSION['kullanici_id']) ? $_SESSION['kullanici_id'] : 0;
+        $kullanici_adsoyad = isset($_SESSION['ad_soyad']) ? $_SESSION['ad_soyad'] : (isset($_SESSION['kullanici']) ? $_SESSION['kullanici'] : 'Sistem');
+        if ($kullanici_id > 0 && ($kullanici_adsoyad == 'Sistem' || empty($kullanici_adsoyad))) {
+            $user = DB::getRow("SELECT CONCAT_WS(' ', AD, SOYAD) AS ADSOYAD FROM KULLANICI WHERE ID = :ID", [':ID' => $kullanici_id]);
+            if ($user && !empty($user->ADSOYAD)) {
+                $kullanici_adsoyad = $user->ADSOYAD;
+            }
+        }
+        $tarih = date('Y-m-d');
+        $saat = date('H:i:s');
+        
+        $sql = "INSERT INTO GENEL_LOG SET 
+                    LOG_TURU = :LOG_TURU,
+                    REFERANS_ID = :REFERANS_ID,
+                    REFERANS_NO = :REFERANS_NO,
+                    ISLEM_TURU = :ISLEM_TURU,
+                    KULLANICI_ID = :KULLANICI_ID,
+                    KULLANICI_ADSOYAD = :KULLANICI_ADSOYAD,
+                    ALAN = :ALAN,
+                    ESKI_DEGER = :ESKI_DEGER,
+                    YENI_DEGER = :YENI_DEGER,
+                    ACIKLAMA = :ACIKLAMA,
+                    TARIH = :TARIH,
+                    SAAT = :SAAT";
+                    
+        DB::insert($sql, [
+            ':LOG_TURU' => $logTuru,
+            ':REFERANS_ID' => $referansId,
+            ':REFERANS_NO' => $referansNo,
+            ':ISLEM_TURU' => $islemTuru,
+            ':KULLANICI_ID' => $kullanici_id,
+            ':KULLANICI_ADSOYAD' => $kullanici_adsoyad,
+            ':ALAN' => $alan,
+            ':ESKI_DEGER' => $eskiDeger,
+            ':YENI_DEGER' => $yeniDeger,
+            ':ACIKLAMA' => $aciklama,
+            ':TARIH' => $tarih,
+            ':SAAT' => $saat
+        ]);
+    }
+
+    // SIPARIS KAYNAKLARI (Sources)
+    public function getSiparisKaynaklari($request = []) {
+        $data = [];
+        $sql = "SELECT * FROM SIPARIS_KAYNAK WHERE 1";
+        if (isset($request['durum']) && in_array($request['durum'], ['0', '1'])) {
+            $sql .= " AND DURUM = :DURUM";
+            $data[':DURUM'] = $request['durum'];
+        }
+        if (isset($request['kaynak']) && !empty($request['kaynak'])) {
+            $sql .= " AND KAYNAK LIKE :KAYNAK";
+            $data[':KAYNAK'] = '%' . trim($request['kaynak']) . '%';
+        }
+        $sql .= " ORDER BY ID ASC";
+        
+        $sayfalama = $this->sayfalamaOlustur(count2(DB::get($sql, $data)), $request, $request['sayfalama'] ? $request['sayfalama'] : 50);
+        $excel_sql = DB::getSQL($sql, $data);
+        $sql .= $sayfalama->getLimitOffset();
+        $rows = DB::get($sql, $data);
+        return [
+            'rows' => $rows,
+            'sayfalama' => $sayfalama,
+            'limit' => $sayfalama->getLimitOffset(),
+            'excel_sql' => $excel_sql,
+            'sayfa_araligi' => $sayfalama->getGorunumAraligi()
+        ];
+    }
+
+    public function getSiparisKaynagi($request) {
+        $sql = "SELECT * FROM SIPARIS_KAYNAK WHERE ID = :ID";
+        return DB::getRow($sql, [':ID' => $request['id']]);
+    }
+
+    public function siparis_kaynagi_ekle() {
+        if (!in_array($_SESSION['yetki_id'], [1, 2])) {
+            return ["HATA" => true, "ACIKLAMA" => "Yetkiniz Yok!"];
+        }
+        if (strlen(trim($_REQUEST['kaynak'])) <= 0) {
+            return ["HATA" => true, "ACIKLAMA" => "Kaynak Adı Giriniz!"];
+        }
+        $token = md5(microtime() . $_REQUEST['kaynak']);
+        $sql = "INSERT INTO SIPARIS_KAYNAK SET KAYNAK = :KAYNAK, DURUM = :DURUM, ACIKLAMA = :ACIKLAMA, TOKEN = :TOKEN";
+        $id = DB::insert($sql, [
+            ':KAYNAK' => trim($_REQUEST['kaynak']),
+            ':DURUM' => $_REQUEST['durum'],
+            ':ACIKLAMA' => trim($_REQUEST['aciklama']),
+            ':TOKEN' => $token
+        ]);
+        if ($id > 0) {
+            return ["HATA" => false, "ACIKLAMA" => "Sipariş Kaynağı Oluşturuldu.", "URL" => "/views/tanimlama/siparis_kaynagi_listesi.php?route=tanimlama/siparis_kaynagi_listesi"];
+        }
+        return ["HATA" => true, "ACIKLAMA" => "Hata Oluştu."];
+    }
+
+    public function siparis_kaynagi_kaydet() {
+        if (!in_array($_SESSION['yetki_id'], [1, 2])) {
+            return ["HATA" => true, "ACIKLAMA" => "Yetkiniz Yok!"];
+        }
+        $row = DB::getRow("SELECT * FROM SIPARIS_KAYNAK WHERE ID = :ID", [':ID' => $_REQUEST['id']]);
+        if (!$row) {
+            return ["HATA" => true, "ACIKLAMA" => "Kayıt Bulunamadı!"];
+        }
+        $sql = "UPDATE SIPARIS_KAYNAK SET KAYNAK = :KAYNAK, DURUM = :DURUM, ACIKLAMA = :ACIKLAMA WHERE ID = :ID";
+        $update = DB::exec($sql, [
+            ':KAYNAK' => trim($_REQUEST['kaynak']),
+            ':DURUM' => $_REQUEST['durum'],
+            ':ACIKLAMA' => trim($_REQUEST['aciklama']),
+            ':ID' => $row->ID
+        ]);
+        return ["HATA" => false, "ACIKLAMA" => "Kayıt Güncellendi."];
+    }
+
+    public function siparis_kaynagi_sil() {
+        if (!in_array($_SESSION['yetki_id'], [1, 2])) {
+            return ["HATA" => true, "ACIKLAMA" => "Yetkiniz Yok!"];
+        }
+        $sql = "DELETE FROM SIPARIS_KAYNAK WHERE ID = :ID";
+        DB::exec($sql, [':ID' => $_REQUEST['id']]);
+        return ["HATA" => false, "ACIKLAMA" => "Silindi."];
+    }
+
+    // SIPARIS TIPLERI (Types)
+    public function getSiparisTipleri($request = []) {
+        $data = [];
+        $sql = "SELECT * FROM SIPARIS_TIPI WHERE 1";
+        if (isset($request['durum']) && in_array($request['durum'], ['0', '1'])) {
+            $sql .= " AND DURUM = :DURUM";
+            $data[':DURUM'] = $request['durum'];
+        }
+        if (isset($request['siparis_tipi']) && !empty($request['siparis_tipi'])) {
+            $sql .= " AND SIPARIS_TIPI LIKE :TIPI";
+            $data[':TIPI'] = '%' . trim($request['siparis_tipi']) . '%';
+        }
+        $sql .= " ORDER BY ID ASC";
+        
+        $sayfalama = $this->sayfalamaOlustur(count2(DB::get($sql, $data)), $request, $request['sayfalama'] ? $request['sayfalama'] : 50);
+        $excel_sql = DB::getSQL($sql, $data);
+        $sql .= $sayfalama->getLimitOffset();
+        $rows = DB::get($sql, $data);
+        return [
+            'rows' => $rows,
+            'sayfalama' => $sayfalama,
+            'limit' => $sayfalama->getLimitOffset(),
+            'excel_sql' => $excel_sql,
+            'sayfa_araligi' => $sayfalama->getGorunumAraligi()
+        ];
+    }
+
+    public function getSiparisTipi($request) {
+        $sql = "SELECT * FROM SIPARIS_TIPI WHERE ID = :ID";
+        return DB::getRow($sql, [':ID' => $request['id']]);
+    }
+
+    public function siparis_tipi_ekle() {
+        if (!in_array($_SESSION['yetki_id'], [1, 2])) {
+            return ["HATA" => true, "ACIKLAMA" => "Yetkiniz Yok!"];
+        }
+        if (strlen(trim($_REQUEST['siparis_tipi'])) <= 0) {
+            return ["HATA" => true, "ACIKLAMA" => "Sipariş Tipi Adı Giriniz!"];
+        }
+        $token = md5(microtime() . $_REQUEST['siparis_tipi']);
+        $sql = "INSERT INTO SIPARIS_TIPI SET SIPARIS_TIPI = :TIPI, DURUM = :DURUM, ACIKLAMA = :ACIKLAMA, TOKEN = :TOKEN";
+        $id = DB::insert($sql, [
+            ':TIPI' => trim($_REQUEST['siparis_tipi']),
+            ':DURUM' => $_REQUEST['durum'],
+            ':ACIKLAMA' => trim($_REQUEST['aciklama']),
+            ':TOKEN' => $token
+        ]);
+        if ($id > 0) {
+            return ["HATA" => false, "ACIKLAMA" => "Sipariş Tipi Oluşturuldu.", "URL" => "/views/tanimlama/siparis_tipi_listesi.php?route=tanimlama/siparis_tipi_listesi"];
+        }
+        return ["HATA" => true, "ACIKLAMA" => "Hata Oluştu."];
+    }
+
+    public function siparis_tipi_kaydet() {
+        if (!in_array($_SESSION['yetki_id'], [1, 2])) {
+            return ["HATA" => true, "ACIKLAMA" => "Yetkiniz Yok!"];
+        }
+        $row = DB::getRow("SELECT * FROM SIPARIS_TIPI WHERE ID = :ID", [':ID' => $_REQUEST['id']]);
+        if (!$row) {
+            return ["HATA" => true, "ACIKLAMA" => "Kayıt Bulunamadı!"];
+        }
+        $sql = "UPDATE SIPARIS_TIPI SET SIPARIS_TIPI = :TIPI, DURUM = :DURUM, ACIKLAMA = :ACIKLAMA WHERE ID = :ID";
+        $update = DB::exec($sql, [
+            ':TIPI' => trim($_REQUEST['siparis_tipi']),
+            ':DURUM' => $_REQUEST['durum'],
+            ':ACIKLAMA' => trim($_REQUEST['aciklama']),
+            ':ID' => $row->ID
+        ]);
+        return ["HATA" => false, "ACIKLAMA" => "Kayıt Güncellendi."];
+    }
+
+    public function siparis_tipi_sil() {
+        if (!in_array($_SESSION['yetki_id'], [1, 2])) {
+            return ["HATA" => true, "ACIKLAMA" => "Yetkiniz Yok!"];
+        }
+        $sql = "DELETE FROM SIPARIS_TIPI WHERE ID = :ID";
+        DB::exec($sql, [':ID' => $_REQUEST['id']]);
+        return ["HATA" => false, "ACIKLAMA" => "Silindi."];
+    }
+
+    // LOGLAR
+    public function getSiparisLoglari($request = []) {
+        $data = [];
+        $sql = "SELECT * FROM GENEL_LOG WHERE LOG_TURU = 'Sipariş' ";
+        if (!empty($request['siparis_no'])) {
+            $sql .= " AND REFERANS_NO LIKE :SIPARIS_NO";
+            $data[':SIPARIS_NO'] = '%' . trim($request['siparis_no']) . '%';
+        }
+        if (!empty($request['kullanici'])) {
+            $sql .= " AND KULLANICI_ADSOYAD LIKE :KULLANICI";
+            $data[':KULLANICI'] = '%' . trim($request['kullanici']) . '%';
+        }
+        $sql .= " ORDER BY ID DESC";
+
+        $sayfalama = $this->sayfalamaOlustur(count2(DB::get($sql, $data)), $request, $request['sayfalama'] ? $request['sayfalama'] : 50);
+        $excel_sql = DB::getSQL($sql, $data);
+        $sql .= $sayfalama->getLimitOffset();
+        $rows = DB::get($sql, $data);
+        return [
+            'rows' => $rows,
+            'sayfalama' => $sayfalama,
+            'limit' => $sayfalama->getLimitOffset(),
+            'excel_sql' => $excel_sql,
+            'sayfa_araligi' => $sayfalama->getGorunumAraligi()
+        ];
+    }
+
+    public function siparis_kaynagi_bilgisi() {
+        $row = $this->getSiparisKaynagi(['id' => $_REQUEST['id']]);
+        if ($row) {
+            return ["HATA" => false, "ROW" => $row];
+        }
+        return ["HATA" => true, "ACIKLAMA" => "Kayıt Bulunamadı."];
+    }
+
+    public function siparis_tipi_bilgisi() {
+        $row = $this->getSiparisTipi(['id' => $_REQUEST['id']]);
+        if ($row) {
+            return ["HATA" => false, "ROW" => $row];
+        }
+        return ["HATA" => true, "ACIKLAMA" => "Kayıt Bulunamadı."];
     }
 }

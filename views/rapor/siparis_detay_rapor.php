@@ -15,6 +15,7 @@
     $excel->sutunEkle("Müşteri","MUSTERI","");
     $excel->sutunEkle("Birim Fiyat","FIYAT","");
     $excel->sutunEkle("Adet","ADET","");
+    $excel->sutunEkle("Ekstra (Tutar)","EKSTRA_TUTAR","");
     $excel->sutunEkle("Toplam Tutar","TUTAR","");
     $excel->sutunEkle("Sipariş Tarihi","SIPARIS_TARIH","");
     $excel->sutunEkle("Hazırlanma Süresi (Dakika)","HAZIRLANMA_SURESI","");
@@ -143,11 +144,12 @@
                                                     <td nowrap>#</td>
                                                     <td nowrap align="center">Ürün Resmi</td>
                                                     <td nowrap align="center">Sipariş No</td>
-                                                    <td nowrap>Ürün</td>
+                                                    <td>Ürün</td>
                                                     <td nowrap>Kaynak</td>
                                                     <td nowrap>Müşteri</td>
                                                     <td nowrap align="right">Birim Fiyat</td>
                                                     <td nowrap align="center">Adet</td>
+                                                    <td nowrap align="right">Ekstra (Tutar)</td>
                                                     <td nowrap align="right">Toplam Tutar</td>
                                                     <td nowrap align="center">Sipariş Tarihi</td>
                                                     <td nowrap align="center">Hazırlanma Süresi (Dakika)</td>
@@ -158,6 +160,7 @@
                                                 <?foreach ($rows as $key => $row) {
                                                     $row_toplam->FIYAT              += $row->FIYAT;
                                                     $row_toplam->ADET               += $row->ADET;
+                                                    $row_toplam->EKSTRA_TUTAR       += $row->EKSTRA_TUTAR;
                                                     $row_toplam->TUTAR              += $row->TUTAR;
                                                     ?>
                                                     <tr>
@@ -170,11 +173,19 @@
                                                             <?}?>
                                                         </td>
                                                         <td align="center"><a href="/views/siparis/siparis_detay.php?route=rapor/siparis_detay_rapor&id=<?=$row->SIPARIS_ID?>&token=<?=$row->TOKEN?>" data-bs-toggle="tooltip" title="Sipariş Detayı">#<?=$row->SIPARIS_NO?></a></td>
-                                                        <td nowrap><?=$row->URUN?></td>
+                                                        <td>
+                                                            <div title="<?=htmlspecialchars($row->URUN)?>" data-bs-toggle="tooltip"><strong><?=FormatYazi::kisalt2($row->URUN, 60)?></strong></div>
+                                                            <?if(!empty($row->ekstralar)){?>
+                                                                <?foreach($row->ekstralar as $ex){?>
+                                                                    <div class="small text-success">+ <?=$ex->MALZEME_AD?> (<?=FormatSayi::sayi($ex->FIYAT)?> ₺)</div>
+                                                                <?}?>
+                                                            <?}?>
+                                                        </td>
                                                         <td nowrap><?=$row->KAYNAK?></td>
                                                         <td nowrap><?=$row->MUSTERI?></td>
                                                         <td nowrap align="right"><?=FormatSayi::sayi($row->FIYAT)?> ₺</td>
                                                         <td nowrap align="center"><?=$row->ADET?></td>
+                                                        <td nowrap align="right"><?=FormatSayi::sayi($row->EKSTRA_TUTAR)?> ₺</td>
                                                         <td nowrap align="right"><?=FormatSayi::sayi($row->TUTAR)?> ₺</td>
                                                         <td nowrap align="center"><?=FormatTarih::tarih($row->SIPARIS_TARIH)?></td>
                                                         <td nowrap align="center"><?=!is_null($row->HAZIRLANMA_SURESI) ? $row->HAZIRLANMA_SURESI . " dk" : "-"?></td>
@@ -189,6 +200,7 @@
                                                     <td nowrap colspan="6" align="right">Genel Toplam :</td>
                                                     <td nowrap align="right"><?=FormatSayi::sayi($row_toplam->FIYAT,2)?> ₺</td>
                                                     <td nowrap align="center"><?=FormatSayi::sayi($row_toplam->ADET,0)?></td>
+                                                    <td nowrap align="right"><?=FormatSayi::sayi($row_toplam->EKSTRA_TUTAR,2)?> ₺</td>
                                                     <td nowrap align="right"><?=FormatSayi::sayi($row_toplam->TUTAR,2)?> ₺</td>
                                                     <td nowrap colspan="3"></td>
                                                 </tr>
