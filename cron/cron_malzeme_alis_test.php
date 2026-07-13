@@ -48,9 +48,11 @@ for ($tarih = $baslangic; $tarih < $bitis; $tarih->modify('+1 day')) {
         foreach ($rows_recete as $row_recete) {
 
             $data = array();
-            $sql = "SELECT * FROM MALZEME_ALIS 
-                    WHERE MALZEME_ID = :MALZEME_ID 
-                    ORDER BY FATURA_TARIH DESC LIMIT 1";
+            $sql = "SELECT MAD.BIRIM_FIYAT, MA.FATURA_TARIH 
+                    FROM MALZEME_ALIS_DETAY AS MAD
+                    LEFT JOIN MALZEME_ALIS AS MA ON MA.ID = MAD.MALZEME_ALIS_ID
+                    WHERE MAD.MALZEME_ID = :MALZEME_ID AND MA.DURUM = 1
+                    ORDER BY MA.FATURA_TARIH DESC LIMIT 1";
             $data[':MALZEME_ID'] = $row_recete->MALZEME_ID;
             $rows_alis = DB::get($sql, $data);
 
@@ -96,10 +98,13 @@ for ($tarih = $baslangic; $tarih < $bitis; $tarih->modify('+1 day')) {
         } else if (in_array($row_urun->KATEGORI_ID, array(4))) { // İçecek
 
             $data = array();
-            $sql = "SELECT MA.*
-                    FROM MALZEME_ALIS AS MA
-                        LEFT JOIN MALZEME AS M ON M.ID = MA.MALZEME_ID
-                    WHERE M.URUN_ID = :URUN_ID
+            $sql = "SELECT 
+                        MAD.BIRIM_FIYAT,
+                        MA.FATURA_TARIH
+                    FROM MALZEME_ALIS_DETAY AS MAD
+                        LEFT JOIN MALZEME_ALIS AS MA ON MA.ID = MAD.MALZEME_ALIS_ID
+                        LEFT JOIN MALZEME AS M ON M.ID = MAD.MALZEME_ID
+                    WHERE M.URUN_ID = :URUN_ID AND MA.DURUM = 1
                     ORDER BY MA.FATURA_TARIH DESC LIMIT 1";
             $data[':URUN_ID'] = $row_urun->ID;
             $rows_alis_icecek = DB::getRow($sql, $data);

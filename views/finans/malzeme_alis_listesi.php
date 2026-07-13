@@ -7,16 +7,14 @@
     }
 
     $excel = new excelSayfasi();
+    $excel->sutunEkle("Fiş No","FIS_NO","");
     $excel->sutunEkle("Cari","CARI","");
-    $excel->sutunEkle("Malzeme","MALZEME","");
-    $excel->sutunEkle("Miktar","MIKTAR","FormatSayi::virgul2");
-    $excel->sutunEkle("Birim Fiyat","BIRIM_FIYAT","FormatSayi::virgul2");
+    $excel->sutunEkle("Malzeme Sayısı","MALZEME_SAYISI","");
     $excel->sutunEkle("Ara Toplam","ARA_TOPLAM","FormatSayi::virgul2");
-    $excel->sutunEkle("Kdv","KDV","");
-    $excel->sutunEkle("Kdv Tutar","KDV_TUTAR","FormatSayi::virgul2");
-    $excel->sutunEkle("Toplam Tutar","TOPLAM_TUTAR","FormatSayi::virgul2");
+    $excel->sutunEkle("Toplam KDV","KDV_TUTAR","FormatSayi::virgul2");
+    $excel->sutunEkle("Genel Toplam","TOPLAM_TUTAR","FormatSayi::virgul2");
     $excel->sutunEkle("Ödeme Durum","ODEME_DURUM","");
-    $excel->sutunEkle("Fatura Tarih","FATURA_TARIH","");
+    $excel->sutunEkle("Alış Tarihi","ALIS_TARIH","");
     $excelOut = $excel->excel();
 
     $result             = $cMalzemeAlis->getMalzemeAlislar($_REQUEST);
@@ -113,44 +111,41 @@
                                             <thead class="thead-themed fw-bold py-0">
                                                 <tr class="table-primary">
                                                     <td nowrap>#</td>
+                                                    <td nowrap>Fiş No</td>
                                                     <td nowrap>Cari</td>
-                                                    <td nowrap>Malzeme</td>
-                                                    <td nowrap align="right">Miktar</td>
-                                                    <td nowrap align="right">Birim Fiyat</td>
+                                                    <td nowrap align="center">Malzeme Sayısı</td>
                                                     <td nowrap align="right">Ara Toplam</td>
-                                                    <td nowrap align="right">KDV</td>
-                                                    <td nowrap align="right">KDV Tutar</td>
-                                                    <td nowrap align="right">Toplam Tutar</td>
-                                                    <td nowrap align="center">Ödeme Durum</td>
-                                                    <td nowrap align="center">Fatura Tarih</td>
+                                                    <td nowrap align="right">Toplam KDV</td>
+                                                    <td nowrap align="right">Genel Toplam</td>
+                                                    <td nowrap align="center">Ödeme Durumu</td>
+                                                    <td nowrap align="center">Ödeme Tarihi</td>
+                                                    <td nowrap align="center">Alış Tarihi</td>
                                                     <td nowrap>Kayıt Yapan</td>
-                                                    <td nowrap ></td>
+                                                    <td nowrap >İşlemler</td>
                                                 </tr>
                                             </thead>
                                             <tbody>
                                                 <?foreach ($rows as $key => $row) {
-                                                    $row_toplam->MIKTAR             += $row->MIKTAR;
                                                     $row_toplam->ARA_TOPLAM         += $row->ARA_TOPLAM;
                                                     $row_toplam->KDV_TUTAR          += $row->KDV_TUTAR;
                                                     $row_toplam->TOPLAM_TUTAR       += $row->TOPLAM_TUTAR;
                                                     ?>
-                                                    <tr>
+                                                    <tr style="cursor: pointer;" onclick="location.href='/views/finans/malzeme_alis_detay.php?id=<?=$row->ID?>&token=<?=$row->TOKEN?>'">
                                                         <td><?=($key+1)?></td>
+                                                        <td nowrap class="fw-semibold">#<?=$row->FIS_NO?></td>
                                                         <td nowrap><?=$row->CARI?></td>
-                                                        <td nowrap><?=$row->MALZEME?></td>
-                                                        <td nowrap align="right"><?=FormatSayi::sayi($row->MIKTAR,2)?></td>
-                                                        <td nowrap align="right"><?=FormatSayi::sayi($row->BIRIM_FIYAT,2)?> ₺</td>
+                                                        <td nowrap align="center"><span class="badge bg-label-secondary"><?=$row->MALZEME_SAYISI?></span></td>
                                                         <td nowrap align="right"><?=FormatSayi::sayi($row->ARA_TOPLAM,2)?> ₺</td>
-                                                        <td nowrap align="right">% <?=$row->KDV?></td>
                                                         <td nowrap align="right"><?=FormatSayi::sayi($row->KDV_TUTAR,2)?> ₺</td>
-                                                        <td nowrap align="right"><?=FormatSayi::sayi($row->TOPLAM_TUTAR,2)?> ₺</td>
-                                                        <td nowrap align="center"><?=fncOdemeDurumSpan($row->ODEME_DURUM_ID)?></td>
-                                                        <td nowrap align="center"><?=FormatTarih::tarih($row->FATURA_TARIH)?></td>
+                                                        <td nowrap align="right" class="fw-bold"><?=FormatSayi::sayi($row->TOPLAM_TUTAR,2)?> ₺</td>
+                                                        <td nowrap align="center" onclick="event.stopPropagation();"><?=fncOdemeDurumSpan($row->ODEME_DURUM_ID)?></td>
+                                                        <td nowrap align="center"><?=($row->ODEME_TARIHI) ? FormatTarih::tarih($row->ODEME_TARIHI) : '-'?></td>
+                                                        <td nowrap align="center"><?=FormatTarih::tarih($row->ALIS_TARIH)?></td>
                                                         <td><?=FormatYazi::kisalt2($row->KAYIT_YAPAN,25)?></td>
-                                                        <td align="right" nowrap>
+                                                        <td align="right" nowrap onclick="event.stopPropagation();">
                                                             <a href="javascript:;" data-bs-toggle="tooltip" class="btn btn-success btn-icon btn-sm" data-id="<?=$row->ID?>" onclick="fncOdendi(this)" title="Ödendi Yap"> <i class="ri-check-double-line"></i></a>
                                                             <a href="javascript:;" data-bs-toggle="tooltip" class="btn btn-danger btn-icon btn-sm" data-id="<?=$row->ID?>" onclick="fncOdemeRed(this)" title="Ödemeyi Reddet"> <i class="ri-close-line"></i></a>
-                                                            <a href="/views/finans/malzeme_alis_duzenle.php?route=finans/malzeme_alis_listesi&id=<?=$row->ID?>&token=<?=$row->TOKEN?>" data-bs-toggle="tooltip" class="btn btn-primary btn-icon btn-sm" title="Düzenle"> <i class="ri-pencil-line"></i></a>
+                                                            <a href="/views/finans/malzeme_alis_detay.php?id=<?=$row->ID?>&token=<?=$row->TOKEN?>" data-bs-toggle="tooltip" class="btn btn-info btn-icon btn-sm" title="Detay"> <i class="ri-eye-line"></i></a>
                                                             <a href="javascript:;" class="btn btn-danger btn-icon btn-sm" data-id="<?=$row->ID?>" onclick="fncSil(this)" title="Sil"><i class="ri-delete-bin-5-line"></i></a>
                                                         </td>
                                                     </tr>
@@ -158,14 +153,11 @@
                                             </tbody>
                                             <tfoot>
                                                 <tr class="table-secondary fw-bold">
-                                                    <td colspan="3" align="right">Genel Toplam :</td>
-                                                    <td align="right"><?=FormatSayi::sayi($row_toplam->MIKTAR,2)?></td>
-                                                    <td></td>
+                                                    <td colspan="5" align="right">Genel Toplam :</td>
                                                     <td align="right"><?=FormatSayi::sayi($row_toplam->ARA_TOPLAM,2)?> ₺</td>
-                                                    <td></td>
                                                     <td align="right"><?=FormatSayi::sayi($row_toplam->KDV_TUTAR,2)?> ₺</td>
                                                     <td align="right"><?=FormatSayi::sayi($row_toplam->TOPLAM_TUTAR,2)?> ₺</td>
-                                                    <td colspan="4"></td>
+                                                    <td colspan="5"></td>
                                                 </tr>
                                             </tfoot>
                                         </table>

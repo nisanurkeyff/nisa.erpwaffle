@@ -53,19 +53,17 @@ class RaporController
         $sql = "SELECT 
                     MA.*,
                     C.CARI,
-                    SUM(BIRIM_FIYAT) AS BIRIM_FIYAT,
-                    SUM(ARA_TOPLAM) AS ARA_TOPLAM,
-                    SUM(KDV_TUTAR) AS KDV_TUTAR,
-                    SUM(TOPLAM_TUTAR) AS TOPLAM_TUTAR
+                    SUM(MA.ARA_TOPLAM) AS ARA_TOPLAM,
+                    SUM(MA.KDV_TUTAR) AS KDV_TUTAR,
+                    SUM(MA.TOPLAM_TUTAR) AS TOPLAM_TUTAR
                 FROM MALZEME_ALIS AS MA
                     LEFT JOIN CARI AS C ON C.ID = MA.CARI_ID
-                    LEFT JOIN MALZEME AS M ON M.ID = MA.MALZEME_ID
                     LEFT JOIN KULLANICI AS KU ON KU.ID = MA.KAYIT_YAPAN_ID
                 WHERE MA.DURUM = 1
                 ";
 
         if ($request['malzeme_id'] > 0) {
-            $sql .= " AND MA.MALZEME_ID = :MALZEME_ID";
+            $sql .= " AND MA.ID IN (SELECT DISTINCT MALZEME_ALIS_ID FROM MALZEME_ALIS_DETAY WHERE MALZEME_ID = :MALZEME_ID)";
             $data[':MALZEME_ID'] = $request['malzeme_id'];
         }
 
