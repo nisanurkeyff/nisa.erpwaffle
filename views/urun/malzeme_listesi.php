@@ -50,35 +50,51 @@
                                             <form>
                                                 <input type="hidden" name="route" value="<?=$_REQUEST['route']?>">
                                                 <div class="row">
-                                                    <div class="col-md-4 mb-2">
-                                                        <div class="input-group input-group-merge">
-                                                            <span class="input-group-text"><i class="ri-restaurant-2-fill"></i></span>
-                                                            <div class="form-floating form-floating-outline">
-                                                                <input type="text" id="malzeme" name="malzeme" class="form-control" value="<?=$_REQUEST['malzeme']?>" placeholder="Malzeme">
-                                                                <label>Malzeme</label>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    <div class="col-md-2 mb-2">
-                                                        <div class="form-floating form-floating-outline">
-                                                            <select name="durum" id="durum" class="select2 form-select" data-style="btn-default">
-                                                                <?=$cKullanici->Durum()->setSecilen()->setSeciniz()->getSelect("ID", "AD")?>
-                                                            </select>
-                                                            <label>Durum</label>
-                                                        </div>
-                                                    </div>
-                                                    <div class="col-md-2 mb-4">
-                                                        <div class="form-floating form-floating-outline">
-                                                            <select name="sayfalama" id="sayfalama" class="btn select2 form-select" data-style="btn-default">
-                                                                <?=$cUrun->Sayfalama()->setSecilen($_REQUEST['sayfalama'])->getSelect("ID", "AD")?>
-                                                            </select>
-                                                            <label>Sayfalama</label>
-                                                        </div>
-                                                    </div>
-                                                    <div class="col-md-2 mt-1">
-                                                        <button type="submit" class="btn btn-primary">Filtrele</button>
-                                                    </div>
-                                                </div>
+                                                     <div class="col-md-3 mb-2">
+                                                         <div class="input-group input-group-merge">
+                                                             <span class="input-group-text"><i class="ri-restaurant-2-fill"></i></span>
+                                                             <div class="form-floating form-floating-outline">
+                                                                 <input type="text" id="malzeme" name="malzeme" class="form-control" value="<?=$_REQUEST['malzeme']?>" placeholder="Malzeme">
+                                                                 <label>Malzeme</label>
+                                                             </div>
+                                                         </div>
+                                                     </div>
+                                                     <div class="col-md-2 mb-2">
+                                                         <div class="form-floating form-floating-outline">
+                                                             <select name="temel_birim_id" id="temel_birim_id" class="select2 form-select" data-style="btn-default">
+                                                                 <?=$cUrun->Birimler()->setSeciniz()->setSecilen($_REQUEST['temel_birim_id'])->getSelect("ID", "AD")?>
+                                                             </select>
+                                                             <label>Birim</label>
+                                                         </div>
+                                                     </div>
+                                                     <div class="col-md-2 mb-2">
+                                                         <div class="form-floating form-floating-outline">
+                                                             <select name="malzeme_tipi_id" id="malzeme_tipi_id" class="select2 form-select" data-style="btn-default">
+                                                                 <?=$cUrun->MalzemeTipleri()->setSeciniz()->setSecilen($_REQUEST['malzeme_tipi_id'])->getSelect("ID", "AD")?>
+                                                             </select>
+                                                             <label>Malzeme Tipi</label>
+                                                         </div>
+                                                     </div>
+                                                     <div class="col-md-2 mb-2">
+                                                         <div class="form-floating form-floating-outline">
+                                                             <select name="durum" id="durum" class="select2 form-select" data-style="btn-default">
+                                                                 <?=$cKullanici->Durum()->setSecilen($_REQUEST['durum'])->setSeciniz()->getSelect("ID", "AD")?>
+                                                             </select>
+                                                             <label>Durum</label>
+                                                         </div>
+                                                     </div>
+                                                     <div class="col-md-2 mb-4">
+                                                         <div class="form-floating form-floating-outline">
+                                                             <select name="sayfalama" id="sayfalama" class="btn select2 form-select" data-style="btn-default">
+                                                                 <?=$cUrun->Sayfalama()->setSecilen($_REQUEST['sayfalama'])->getSelect("ID", "AD")?>
+                                                             </select>
+                                                             <label>Sayfalama</label>
+                                                         </div>
+                                                     </div>
+                                                     <div class="col-md-1 mt-1">
+                                                         <button type="submit" class="btn btn-primary w-100">Filtrele</button>
+                                                     </div>
+                                                 </div>
                                             </form>
                                         </div>
                                     </div>
@@ -100,8 +116,11 @@
                                                 <tr class="table-primary">
                                                     <td nowrap>#</td>
                                                     <td nowrap>Malzeme</td>
+                                                    <td nowrap>Birim</td>
+                                                    <td nowrap>Malzeme Tipi</td>
                                                     <td nowrap>Fiyat</td>
                                                     <td nowrap>Ekstra Fiyat</td>
+                                                    <td nowrap align="center">Stok Takip</td>
                                                     <td nowrap align="center">Ekstra</td>
                                                     <td nowrap align="center">Durum</td>
                                                     <td nowrap></td>
@@ -112,8 +131,11 @@
                                                     <tr>
                                                         <td><?=($key+1)?></td>
                                                         <td><?=FormatYazi::kisalt2($row->MALZEME,25)?></td>
+                                                        <td><span class="badge bg-label-info"><?=$row->BIRIM_KISA_ADI ? $row->BIRIM_KISA_ADI : '-'?></span></td>
+                                                        <td><span class="badge bg-label-secondary"><?=$row->MALZEME_TIPI_ADI ? $row->MALZEME_TIPI_ADI : '-'?></span></td>
                                                         <td><?=FormatSayi::sayi($row->FIYAT,2)?> ₺</td>
                                                         <td><?=FormatSayi::sayi($row->EKSTRA_FIYAT,2)?> ₺</td>
+                                                        <td align="center"><?=($row->STOK_TAKIP == '1') ? '<span class="badge bg-label-success">Takip Var</span>' : '<span class="badge bg-label-warning">Takip Yok</span>'?></td>
                                                         <td align="center"><?=($row->EKSTRA == '1') ? '✅' : '❌'?></td>
                                                         <td align="center"><?=fncDurumSpan($row->DURUM)?></td>
                                                         <td nowrap>

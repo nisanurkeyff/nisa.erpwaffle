@@ -181,15 +181,27 @@
                                                                     <thead class="table-light">
                                                                         <tr>
                                                                             <th>Malzeme</th>
-                                                                            <th width="180">Kullanım (Gram)</th>
+                                                                            <th width="220">Kullanım (Miktar)</th>
                                                                             <th width="120" class="text-center">Aktif</th>
                                                                         </tr>
                                                                     </thead>
                                                                     <tbody>
                                                                         <?foreach ($rows_malzeme as $row_malzeme) { ?>
                                                                             <tr>
-                                                                                <td><strong><?=$row_malzeme->MALZEME?></strong></td>
-                                                                                <td><input type="text" class="form-control decimal text-end" name="gramaj[<?=$row_malzeme->ID?>]" value="<?=FormatSayi::sayi($rows_recete_index[$row_malzeme->ID]->MIKTAR,2)?>" placeholder="0.00"></td>
+                                                                                <td>
+                                                                                    <strong><?=$row_malzeme->MALZEME?></strong>
+                                                                                    <?if($row_malzeme->BIRIM_KISA_ADI){?>
+                                                                                        <small class="text-muted ms-1">(<?=$row_malzeme->BIRIM_KISA_ADI?>)</small>
+                                                                                    <?}?>
+                                                                                </td>
+                                                                                <td>
+                                                                                    <div class="input-group input-group-merge">
+                                                                                        <input type="text" class="form-control decimal text-end" name="gramaj[<?=$row_malzeme->ID?>]" value="<?=FormatSayi::sayi($rows_recete_index[$row_malzeme->ID]->MIKTAR, is_numeric($row_malzeme->BIRIM_HASSASIYET) ? $row_malzeme->BIRIM_HASSASIYET : 2)?>" placeholder="0.00">
+                                                                                        <?if($row_malzeme->BIRIM_KISA_ADI){?>
+                                                                                            <span class="input-group-text"><?=$row_malzeme->BIRIM_KISA_ADI?></span>
+                                                                                        <?}?>
+                                                                                    </div>
+                                                                                </td>
                                                                                 <td class="text-center">
                                                                                     <div class="form-check form-switch d-flex justify-content-center">
                                                                                         <input class="form-check-input" type="checkbox" name="aktif[<?=$row_malzeme->ID?>]" value="1" <?=in_array($row_malzeme->ID, $array_malzeme) ? 'checked' : ''?>>

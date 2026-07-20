@@ -17,6 +17,7 @@
 	require_once($_SERVER['DOCUMENT_ROOT'] . '/class/sayfalama.php');
 	require_once($_SERVER['DOCUMENT_ROOT'] . '/class/excel_sayfasi.php');
 	require_once($_SERVER['DOCUMENT_ROOT'] . '/class/resim_yol.php');
+	require_once($_SERVER['DOCUMENT_ROOT'] . '/class/UrunMaliyetService.php');
 
 	require_once($_SERVER['DOCUMENT_ROOT'] . '/controllers/kullaniciController.php');
 	require_once($_SERVER['DOCUMENT_ROOT'] . '/controllers/menuController.php');

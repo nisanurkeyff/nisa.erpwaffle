@@ -333,6 +333,11 @@ class MalzemeAlisController
                 ]);
             }
 
+            $etkilenen_malzeme_idleri = array_column($items_to_insert, 'malzeme_id');
+            if (!empty($etkilenen_malzeme_idleri)) {
+                UrunMaliyetService::hesaplaMalzemeIleIlgiliUrunMaliyetleri($etkilenen_malzeme_idleri);
+            }
+
             $result["HATA"] = FALSE;
             $result["ACIKLAMA"] = "Alış Kaydedildi.";
             $result["ID"] = $id;
@@ -360,6 +365,9 @@ class MalzemeAlisController
             return $result;
         }
 
+        $sql_detay = "SELECT MALZEME_ID FROM MALZEME_ALIS_DETAY WHERE MALZEME_ALIS_ID = :ID";
+        $detaylar = DB::get($sql_detay, [':ID' => $row->ID]);
+
         $data = array();
         $sql = "UPDATE MALZEME_ALIS SET DURUM = 0 WHERE ID = :ID";
         $data[":ID"] = $row->ID;
@@ -368,6 +376,14 @@ class MalzemeAlisController
         fncIslemLog($row->ID, DB::getSQL($sql, $data), $row, __FUNCTION__, "MALZEME_ALIS", "MALZEME_ALIS_SIL");
 
         if ($update > 0) {
+            if ($detaylar) {
+                $etkilenen_ids = array();
+                foreach ($detaylar as $d) {
+                    $etkilenen_ids[] = $d->MALZEME_ID;
+                }
+                UrunMaliyetService::hesaplaMalzemeIleIlgiliUrunMaliyetleri($etkilenen_ids);
+            }
+
             $result["HATA"] = FALSE;
             $result["ACIKLAMA"] = "Silindi.";
         }

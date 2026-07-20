@@ -16,16 +16,20 @@ class DB {
 	
 	public static function baglan($HOST, $DB, $USER, $PASS)
 	{
-		self::$pdo = new PDO(
-			'mysql:host=' . $HOST .';dbname=' . $DB,
-			$USER,
-			$PASS
-		);
+		try {
+			self::$pdo = new PDO(
+				'mysql:host=' . $HOST .';dbname=' . $DB,
+				$USER,
+				$PASS
+			);
 
-		self::$pdo->exec('SET NAMES `' . self::$charset . '`');
-		self::$pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_OBJ);
+			self::$pdo->exec('SET NAMES `' . self::$charset . '`');
+			self::$pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_OBJ);
 
-		return self::$pdo;
+			return self::$pdo;
+		} catch (PDOException $e) {
+			die("Veritabanı Bağlantı Hatası: " . $e->getMessage());
+		}
 	}
 	
 	/*

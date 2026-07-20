@@ -112,11 +112,11 @@
                                                 </div>
                                             </div>
 
-                                            <h5 class="mb-2">Ürün Maliyet Hesapla</h5>
-                                            <p class="text-muted mb-3">Manuel maliyet cron</p>
+                                            <h5 class="mb-2">Ürün Maliyet Bakımı</h5>
+                                            <p class="text-muted mb-3">Tüm ürün maliyetlerini yenile</p>
 
-                                            <button id="cronMaliyetBtn" class="btn btn-danger w-100">
-                                                Maliyet Cron Çalıştır
+                                            <button id="cronMaliyetBtn" class="btn btn-warning w-100">
+                                                Tüm Maliyetleri Yeniden Hesapla
                                             </button>
                                         </div>
                                     </div>
@@ -209,7 +209,7 @@
             fncCronCalistir("/cron/cron_trendyol_siparis_getir.php", $(this));
         });
 
-        $("#cronMaliyetBtn").data("text","Maliyet Cron Çalıştır").on("click", function() {
+        $("#cronMaliyetBtn").data("text","Tüm Maliyetleri Yeniden Hesapla").on("click", function() {
             fncCronCalistir("/cron/cron_urun_maliyet.php", $(this));
         });
 

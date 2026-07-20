@@ -37,9 +37,12 @@ for ($tarih = $baslangic; $tarih < $bitis; $tarih->modify('+1 day')) {
         $sql = "SELECT 
                     UR.*,
                     M.MALZEME,
-                    M.AMBALAJ
+                    MT.KODU AS MALZEME_TIPI_KODU,
+                    B.KODU AS BIRIM_KODU
                 FROM URUN_RECETE AS UR
                     LEFT JOIN MALZEME AS M ON M.ID = UR.MALZEME_ID
+                    LEFT JOIN MALZEME_TIPI AS MT ON MT.ID = M.MALZEME_TIPI_ID
+                    LEFT JOIN BIRIM AS B ON B.ID = M.TEMEL_BIRIM_ID
                 WHERE UR.URUN_ID = :URUN_ID
                 ";
         $data[':URUN_ID'] = $row_urun->ID;
@@ -63,7 +66,7 @@ for ($tarih = $baslangic; $tarih < $bitis; $tarih->modify('+1 day')) {
 
             foreach ($rows_alis as $row_alis) {
 
-                if ($row_recete->AMBALAJ == 1) {
+                if ($row_recete->MALZEME_TIPI_KODU == 'PKG' || $row_recete->BIRIM_KODU == 'ADT') {
                     $birim_maliyet = $row_alis->BIRIM_FIYAT;
                 } else {
                     $birim_maliyet = $row_alis->BIRIM_FIYAT / 1000;

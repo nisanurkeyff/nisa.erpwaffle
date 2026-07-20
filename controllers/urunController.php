@@ -1711,18 +1711,73 @@ class UrunController {
         return $result;
     }
 
+    public function Birimler() {
+        $data = array();
+        $sql = "SELECT
+                    B.ID,
+                    CONCAT(B.BIRIM_ADI, ' (', B.KISA_ADI, ')') AS AD,
+                    B.KISA_ADI,
+                    B.HASSASIYET
+                FROM BIRIM AS B
+                WHERE B.DURUM = '1'
+                ORDER BY B.SIRA ASC, B.BIRIM_ADI ASC";
+
+        $rows = DB::get($sql, $data);
+        $this->select->setTemizle();
+        $this->select->setData($rows);
+        return $this->select;
+    }
+
+    public function MalzemeTipleri() {
+        $data = array();
+        $sql = "SELECT
+                    MT.ID,
+                    MT.MALZEME_TIPI AS AD,
+                    MT.KODU
+                FROM MALZEME_TIPI AS MT
+                WHERE MT.DURUM = '1'
+                ORDER BY MT.SIRA ASC, MT.MALZEME_TIPI ASC";
+
+        $rows = DB::get($sql, $data);
+        $this->select->setTemizle();
+        $this->select->setData($rows);
+        return $this->select;
+    }
+
     public function getMalzemeler($request) {
         global $row_site;
 
         $data = array();
         $sql = "SELECT 
-                    * 
+                    M.*,
+                    B.BIRIM_ADI,
+                    B.KISA_ADI AS BIRIM_KISA_ADI,
+                    B.HASSASIYET AS BIRIM_HASSASIYET,
+                    MT.MALZEME_TIPI AS MALZEME_TIPI_ADI,
+                    MT.KODU AS MALZEME_TIPI_KODU
                 FROM MALZEME AS M
+                    LEFT JOIN BIRIM AS B ON B.ID = M.TEMEL_BIRIM_ID
+                    LEFT JOIN MALZEME_TIPI AS MT ON MT.ID = M.MALZEME_TIPI_ID
                 WHERE 1";
 
         if($request['malzeme']){
             $sql .= " AND M.MALZEME LIKE :MALZEME";
             $data[':MALZEME'] = "%" . $request['malzeme'] . "%";
+        }
+
+        if(intval($request['temel_birim_id']) > 0){
+            $sql .= " AND M.TEMEL_BIRIM_ID = :TEMEL_BIRIM_ID";
+            $data[':TEMEL_BIRIM_ID'] = $request['temel_birim_id'];
+        }
+
+        if(intval($request['malzeme_tipi_id']) > 0){
+            $sql .= " AND M.MALZEME_TIPI_ID = :MALZEME_TIPI_ID";
+            $data[':MALZEME_TIPI_ID'] = $request['malzeme_tipi_id'];
+        }
+
+        if(in_array2($request['stok_takip'], array(0,1))){
+            $sql .= " AND M.STOK_TAKIP = :STOK_TAKIP";
+            $data[':STOK_TAKIP'] = $request['stok_takip'];
         }
 
         if(in_array2($request['durum'],array(0,1))){
@@ -1770,19 +1825,33 @@ class UrunController {
             return $result;
         }
 
+        $temel_birim_id    = intval($_REQUEST['temel_birim_id']) > 0 ? intval($_REQUEST['temel_birim_id']) : NULL;
+        $malzeme_tipi_id   = intval($_REQUEST['malzeme_tipi_id']) > 0 ? intval($_REQUEST['malzeme_tipi_id']) : NULL;
+        $stok_takip        = isset($_REQUEST['stok_takip']) ? intval($_REQUEST['stok_takip']) : 1;
+        $min_stok_seviyesi = (strlen(trim($_REQUEST['min_stok_seviyesi'])) > 0) ? FormatSayi::sayi2db($_REQUEST['min_stok_seviyesi']) : NULL;
+
         $data = array();
         $sql = "INSERT INTO MALZEME SET MALZEME         = :MALZEME,
                                         URUN_ID         = :URUN_ID,
+                                        TEMEL_BIRIM_ID  = :TEMEL_BIRIM_ID,
+                                        MALZEME_TIPI_ID = :MALZEME_TIPI_ID,
+                                        STOK_TAKIP      = :STOK_TAKIP,
+                                        MIN_STOK_SEVIYESI = :MIN_STOK_SEVIYESI,
                                         ACIKLAMA        = :ACIKLAMA,
                                         FIYAT           = :FIYAT,
                                         EKSTRA_FIYAT    = :EKSTRA_FIYAT,
                                         EKSTRA          = :EKSTRA,
                                         DURUM           = :DURUM,
+                                        ONCELIK         = 1,
                                         KAYIT_YAPAN_ID  = :KAYIT_YAPAN_ID,
                                         TOKEN           = MD5(NOW())
                                         ";
         $data[":MALZEME"]           = trim($_REQUEST['malzeme']);
-        $data[":URUN_ID"]           = $_REQUEST['urun_id'];
+        $data[":URUN_ID"]           = isset($_REQUEST['urun_id']) ? intval($_REQUEST['urun_id']) : 0;
+        $data[":TEMEL_BIRIM_ID"]    = $temel_birim_id;
+        $data[":MALZEME_TIPI_ID"]   = $malzeme_tipi_id;
+        $data[":STOK_TAKIP"]        = $stok_takip;
+        $data[":MIN_STOK_SEVIYESI"] = $min_stok_seviyesi;
         $data[":ACIKLAMA"]          = trim($_REQUEST['aciklama']);
         $data[":FIYAT"]             = FormatSayi::sayi2db($_REQUEST['fiyat']);
         $data[":EKSTRA_FIYAT"]      = FormatSayi::sayi2db($_REQUEST['ekstra_fiyat']);
@@ -1797,6 +1866,7 @@ class UrunController {
         $row = DB::getRow($sql, $data);
 
         if($id > 0){
+            UrunMaliyetService::hesaplaMalzemeIleIlgiliUrunMaliyetleri($id);
             $result["HATA"]      = FALSE;
             $result["ACIKLAMA"]  = "Malzeme Oluşturuldu.";
             $result["URL"]       = "/views/urun/malzeme_duzenle.php?route=malzeme_listesi&id={$row->ID}&token={$row->TOKEN}";
@@ -1839,9 +1909,18 @@ class UrunController {
             return $result;
         }
 
+        $temel_birim_id    = intval($_REQUEST['temel_birim_id']) > 0 ? intval($_REQUEST['temel_birim_id']) : NULL;
+        $malzeme_tipi_id   = intval($_REQUEST['malzeme_tipi_id']) > 0 ? intval($_REQUEST['malzeme_tipi_id']) : NULL;
+        $stok_takip        = isset($_REQUEST['stok_takip']) ? intval($_REQUEST['stok_takip']) : 1;
+        $min_stok_seviyesi = (strlen(trim($_REQUEST['min_stok_seviyesi'])) > 0) ? FormatSayi::sayi2db($_REQUEST['min_stok_seviyesi']) : NULL;
+
         $data = array();
         $sql = "UPDATE MALZEME SET  MALZEME         = :MALZEME,
                                     URUN_ID         = :URUN_ID,
+                                    TEMEL_BIRIM_ID  = :TEMEL_BIRIM_ID,
+                                    MALZEME_TIPI_ID = :MALZEME_TIPI_ID,
+                                    STOK_TAKIP      = :STOK_TAKIP,
+                                    MIN_STOK_SEVIYESI = :MIN_STOK_SEVIYESI,
                                     ACIKLAMA        = :ACIKLAMA,
                                     FIYAT           = :FIYAT,
                                     EKSTRA_FIYAT    = :EKSTRA_FIYAT,
@@ -1851,7 +1930,11 @@ class UrunController {
                                 WHERE ID = :ID
                                 ";
         $data[":MALZEME"]           = trim($_REQUEST['malzeme']);
-        $data[":URUN_ID"]           = $_REQUEST['urun_id'];
+        $data[":URUN_ID"]           = isset($_REQUEST['urun_id']) ? intval($_REQUEST['urun_id']) : 0;
+        $data[":TEMEL_BIRIM_ID"]    = $temel_birim_id;
+        $data[":MALZEME_TIPI_ID"]   = $malzeme_tipi_id;
+        $data[":STOK_TAKIP"]        = $stok_takip;
+        $data[":MIN_STOK_SEVIYESI"] = $min_stok_seviyesi;
         $data[":ACIKLAMA"]          = trim($_REQUEST['aciklama']);
         $data[":FIYAT"]             = FormatSayi::sayi2db($_REQUEST['fiyat']);
         $data[":EKSTRA_FIYAT"]      = FormatSayi::sayi2db($_REQUEST['ekstra_fiyat']);
@@ -1863,6 +1946,7 @@ class UrunController {
         fncIslemLog($row->ID, DB::getSQL($sql, $data), $row, __FUNCTION__, "MALZEME", "MALZEME_DUZENLE");
 
         if($update > 0){
+            UrunMaliyetService::hesaplaMalzemeIleIlgiliUrunMaliyetleri($row->ID);
             $result["HATA"]      = FALSE;
             $result["ACIKLAMA"]  = "Kayıt Edildi.";
         }else{
@@ -1878,8 +1962,15 @@ class UrunController {
         $data = array();
         $sql = "SELECT 
                     M.*,
+                    B.BIRIM_ADI,
+                    B.KISA_ADI AS BIRIM_KISA_ADI,
+                    B.HASSASIYET AS BIRIM_HASSASIYET,
+                    MT.MALZEME_TIPI AS MALZEME_TIPI_ADI,
+                    MT.KODU AS MALZEME_TIPI_KODU,
                     CONCAT_WS(' ',KU.AD,KU.SOYAD) AS KAYIT_YAPAN
                 FROM MALZEME AS M
+                    LEFT JOIN BIRIM AS B ON B.ID = M.TEMEL_BIRIM_ID
+                    LEFT JOIN MALZEME_TIPI AS MT ON MT.ID = M.MALZEME_TIPI_ID
                     LEFT JOIN KULLANICI AS KU ON KU.ID = M.KAYIT_YAPAN_ID
                 WHERE M.ID = :ID
                 ";
@@ -1893,8 +1984,12 @@ class UrunController {
 
         $data = array();
         $sql = "SELECT 
-                    M.*
+                    M.*,
+                    B.BIRIM_ADI,
+                    B.KISA_ADI AS BIRIM_KISA_ADI,
+                    B.HASSASIYET AS BIRIM_HASSASIYET
                 FROM MALZEME AS M
+                    LEFT JOIN BIRIM AS B ON B.ID = M.TEMEL_BIRIM_ID
                 WHERE M.DURUM = 1 AND ONCELIK = 1
                 ORDER BY M.MALZEME ASC
                 ";
@@ -2000,6 +2095,8 @@ class UrunController {
         $data[":MALZEME_IDS"] = $malzeme_ids;
         $data[":ID"]          = $urun_id;
         DB::exec($sql, $data);
+
+        UrunMaliyetService::hesaplaUrunMaliyeti($urun_id);
 
         $result["HATA"] = FALSE;
         $result["ACIKLAMA"] = "Reçete Kaydedildi.";

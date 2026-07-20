@@ -69,19 +69,45 @@
                                                         </div>
                                                         <div class="col-md-6">
                                                             <div class="form-floating form-floating-outline">
+                                                                <select name="temel_birim_id" id="temel_birim_id" class="select2 form-select" data-style="btn-default">
+                                                                    <?=$cUrun->Birimler()->setSeciniz()->setSecilen($row->TEMEL_BIRIM_ID)->getSelect("ID", "AD")?>
+                                                                </select>
+                                                                <label>Temel Birim</label>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <div class="form-floating form-floating-outline">
+                                                                <select name="malzeme_tipi_id" id="malzeme_tipi_id" class="select2 form-select" data-style="btn-default">
+                                                                    <?=$cUrun->MalzemeTipleri()->setSeciniz()->setSecilen($row->MALZEME_TIPI_ID)->getSelect("ID", "AD")?>
+                                                                </select>
+                                                                <label>Malzeme Tipi</label>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <div class="form-floating form-floating-outline">
+                                                                <select name="stok_takip" id="stok_takip" class="select2 form-select" data-style="btn-default">
+                                                                    <option value="1" <?=$row->STOK_TAKIP == '1' ? 'selected' : ''?>>✅ Stok Takip Yap</option>
+                                                                    <option value="0" <?=$row->STOK_TAKIP == '0' ? 'selected' : ''?>>❌ Stok Takip Yapma</option>
+                                                                </select>
+                                                                <label>Stok Takip</label>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <div class="input-group input-group-merge">
+                                                                <span class="input-group-text"><i class="ri-ruler-line"></i></span>
+                                                                <div class="form-floating form-floating-outline">
+                                                                    <input type="text" class="form-control decimal" id="min_stok_seviyesi" name="min_stok_seviyesi" value="<?=is_null($row->MIN_STOK_SEVIYESI) ? '' : FormatSayi::sayi($row->MIN_STOK_SEVIYESI, $row->BIRIM_HASSASIYET ? $row->BIRIM_HASSASIYET : 2)?>" placeholder="0.00"/>
+                                                                    <label>Minimum Stok Seviyesi</label>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <div class="form-floating form-floating-outline">
                                                                 <select name="ekstra" id="ekstra" class="select2 form-select" data-style="btn-default">
                                                                     <option value="1" <?=$row->EKSTRA == '1' ? 'selected' : ''?>>✅ Göster</option>
                                                                     <option value="0" <?=$row->EKSTRA == '0' ? 'selected' : ''?>>❌ Gösterme</option>
                                                                 </select>
                                                                 <label>Ekstra Malzeme Listesinde Göster</label>
-                                                            </div>
-                                                        </div>
-                                                        <div class="col-md-6">
-                                                            <div class="form-floating form-floating-outline">
-                                                                <select name="urun_id" id="urun_id" class="select2 form-select" data-style="btn-default">
-                                                                    <?=$cUrun->Urunler()->setSeciniz()->setSecilen($row->URUN_ID)->getSelect("ID", "AD")?>
-                                                                </select>
-                                                                <label>Ürün</label>
                                                             </div>
                                                         </div>
                                                         <div class="col-md-6">
