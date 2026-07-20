@@ -1957,6 +1957,81 @@ class UrunController {
         return $result;
     }
 
+    public function malzeme_sil() {
+
+        if (!in_array($_SESSION['yetki_id'], array(1, 2))) {
+            $result["HATA"]          = TRUE;
+            $result["ACIKLAMA"]      = "Yetkiniz Yok!";
+            return $result;
+        }
+
+        $id = intval($_REQUEST["id"]);
+        if ($id <= 0) {
+            $result["HATA"]          = TRUE;
+            $result["ACIKLAMA"]      = "Geçersiz Malzeme!";
+            return $result;
+        }
+
+        $data = array();
+        $sql = "SELECT * FROM MALZEME WHERE ID = :ID";
+        $data[":ID"]  = $id;
+        $row = DB::getRow($sql, $data);
+
+        if (!$row || is_null($row->ID)) {
+            $result["HATA"]          = TRUE;
+            $result["ACIKLAMA"]      = "Malzeme Bulunamadı!";
+            return $result;
+        }
+
+        // 1. Reçete Kontrolü (URUN_RECETE)
+        $sql_recete = "SELECT COUNT(*) AS CNT FROM URUN_RECETE WHERE MALZEME_ID = :MALZEME_ID";
+        $row_recete = DB::getRow($sql_recete, [':MALZEME_ID' => $row->ID]);
+        if ($row_recete && $row_recete->CNT > 0) {
+            $result["HATA"]          = TRUE;
+            $result["ACIKLAMA"]      = "'{$row->MALZEME}' isimli malzeme ürün reçetelerinde kullanıldığı için silinemez!";
+            return $result;
+        }
+
+        // 2. Alış Faturası Kontrolü (MALZEME_ALIS_DETAY)
+        $sql_alis = "SELECT COUNT(*) AS CNT FROM MALZEME_ALIS_DETAY AS MAD 
+                     LEFT JOIN MALZEME_ALIS AS MA ON MA.ID = MAD.MALZEME_ALIS_ID 
+                     WHERE MAD.MALZEME_ID = :MALZEME_ID AND MA.DURUM = 1";
+        $row_alis = DB::getRow($sql_alis, [':MALZEME_ID' => $row->ID]);
+        if ($row_alis && $row_alis->CNT > 0) {
+            $result["HATA"]          = TRUE;
+            $result["ACIKLAMA"]      = "'{$row->MALZEME}' isimli malzeme alış faturalarında kullanıldığı için silinemez!";
+            return $result;
+        }
+
+        // 3. Sipariş Ekstra Kontrolü (SIPARIS_EKSTRA)
+        $sql_extra = "SELECT COUNT(*) AS CNT FROM SIPARIS_EKSTRA WHERE MALZEME_ID = :MALZEME_ID";
+        $row_extra = DB::getRow($sql_extra, [':MALZEME_ID' => $row->ID]);
+        if ($row_extra && $row_extra->CNT > 0) {
+            $result["HATA"]          = TRUE;
+            $result["ACIKLAMA"]      = "'{$row->MALZEME}' isimli malzeme sipariş ekstralarında kullanıldığı için silinemez!";
+            return $result;
+        }
+
+        // Soft Delete (DURUM = 0)
+        $data = array();
+        $sql = "UPDATE MALZEME SET DURUM = 0, GTARIH = NOW() WHERE ID = :ID";
+        $data[":ID"]        = $row->ID;
+        $update = DB::exec($sql, $data);
+
+        fncIslemLog($row->ID, DB::getSQL($sql, $data), $row, __FUNCTION__, "MALZEME", "MALZEME_SIL");
+
+        if ($update > 0) {
+            UrunMaliyetService::hesaplaMalzemeIleIlgiliUrunMaliyetleri($row->ID);
+            $result["HATA"]      = FALSE;
+            $result["ACIKLAMA"]  = "'{$row->MALZEME}' Silindi.";
+        } else {
+            $result["HATA"]      = TRUE;
+            $result["ACIKLAMA"]  = "Hata Oluştu.";
+        }
+
+        return $result;
+    }
+
     public function getMalzeme($request) {
 
         $data = array();

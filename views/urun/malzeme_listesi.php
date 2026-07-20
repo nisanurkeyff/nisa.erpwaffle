@@ -140,7 +140,7 @@
                                                         <td align="center"><?=fncDurumSpan($row->DURUM)?></td>
                                                         <td nowrap>
                                                             <a href="/views/urun/malzeme_duzenle.php?route=urun/malzeme_listesi&id=<?=$row->ID?>&token=<?=$row->TOKEN?>" data-bs-toggle="tooltip" class="btn btn-primary btn-icon btn-sm" title="Düzenle"> <i class="ri-pencil-line"></i></a>
-                                                            <a href="javascript:;" data-bs-toggle="tooltip" class="btn btn-danger btn-icon btn-sm" data-id="<?=$row->ID?>" onclick="fncUrunSil(this)" title="Sil"><i class="ri-delete-bin-5-line"></i></a>
+                                                            <a href="javascript:;" data-bs-toggle="tooltip" class="btn btn-danger btn-icon btn-sm" data-id="<?=$row->ID?>" onclick="fncMalzemeSil(this)" title="Sil"><i class="ri-delete-bin-5-line"></i></a>
                                                         </td>
                                                     </tr>
                                                 <?}?>
@@ -186,14 +186,14 @@
         });
     }
 
-    function fncUrunSil(obj){
-        sweatAlert("Sildiğiniz Ürün Tüm Şubelerden Kaldırılacaktır. Emin Misiniz?", "Evet, Sil").then(function (result) {
+    function fncMalzemeSil(obj){
+        sweatAlert("Sildiğiniz Malzeme Pasife Alınacaktır. Emin Misiniz?", "Evet, Sil").then(function (result) {
             if (result.value) {
                 showSpinner();
                 $.ajax({
                     url: "/router.php",
                     type: "POST",
-                    data: {id: $(obj).data("id"), controller: "urun", action: "urun_sil"},
+                    data: {id: $(obj).data("id"), controller: "urun", action: "malzeme_sil"},
                     dataType: "json",
                     success: function(response) {
                         $.unblockUI();
