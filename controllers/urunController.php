@@ -2169,7 +2169,7 @@ class UrunController {
                     B.HASSASIYET AS BIRIM_HASSASIYET
                 FROM MALZEME AS M
                     LEFT JOIN BIRIM AS B ON B.ID = M.TEMEL_BIRIM_ID
-                WHERE M.DURUM = 1 AND ONCELIK = 1
+                WHERE M.DURUM = 1
                 ORDER BY M.MALZEME ASC
                 ";
         $row = DB::get($sql, $data);
@@ -2249,17 +2249,17 @@ class UrunController {
 
                     if ($aktif == 1) {
                         $aktif_ids[] = $malzeme_id;
-                    }
 
-                    $data = array();
-                    $sql = "INSERT INTO URUN_RECETE SET URUN_ID     = :URUN_ID,
-                                                        MALZEME_ID  = :MALZEME_ID,
-                                                        MIKTAR      = :MIKTAR
-                                                        ";
-                    $data[":URUN_ID"]    = $urun_id;
-                    $data[":MALZEME_ID"] = $malzeme_id;
-                    $data[":MIKTAR"]     = $miktar;
-                    DB::insert($sql, $data);
+                        $data = array();
+                        $sql = "INSERT INTO URUN_RECETE SET URUN_ID     = :URUN_ID,
+                                                            MALZEME_ID  = :MALZEME_ID,
+                                                            MIKTAR      = :MIKTAR
+                                                            ";
+                        $data[":URUN_ID"]    = $urun_id;
+                        $data[":MALZEME_ID"] = $malzeme_id;
+                        $data[":MIKTAR"]     = $miktar;
+                        DB::insert($sql, $data);
+                    }
                 }
             }
         }

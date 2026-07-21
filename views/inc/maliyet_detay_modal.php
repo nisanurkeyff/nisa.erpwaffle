@@ -18,6 +18,9 @@
                         <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab_m_paketleme" type="button" role="tab">Paketleme</button>
                     </li>
                     <li class="nav-item" role="presentation">
+                        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab_m_sarf" type="button" role="tab">Sarf</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
                         <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab_m_genel" type="button" role="tab">Genel Giderler</button>
                     </li>
                     <li class="nav-item" role="presentation">
@@ -75,6 +78,21 @@
                         </table>
                     </div>
 
+                    <!-- Sarf Tab -->
+                    <div class="tab-pane fade" id="tab_m_sarf" role="tabpanel">
+                        <table class="table table-bordered table-sm align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Sarf Malzemesi</th>
+                                    <th class="text-end">Adet / Miktar</th>
+                                    <th class="text-end">Birim Fiyat</th>
+                                    <th class="text-end">Toplam</th>
+                                </tr>
+                            </thead>
+                            <tbody id="maliyet_sarf_body"></tbody>
+                        </table>
+                    </div>
+
                     <!-- Genel Giderler Tab -->
                     <div class="tab-pane fade" id="tab_m_genel" role="tabpanel">
                         <table class="table table-bordered table-sm align-middle">
@@ -99,12 +117,16 @@
                                     <td class="text-end fw-bold" id="maliyet_hamur_toplami">0.00 TL</td>
                                 </tr>
                                 <tr>
-                                    <td>Malzeme Toplamı</td>
+                                    <td>Malzeme Toplamı <span class="badge bg-secondary ms-1" id="maliyet_malzeme_adet">0 adet</span></td>
                                     <td class="text-end fw-bold" id="maliyet_malzeme_toplami">0.00 TL</td>
                                 </tr>
                                 <tr>
-                                    <td>Paketleme Toplamı</td>
+                                    <td>Paketleme Toplamı <span class="badge bg-secondary ms-1" id="maliyet_paketleme_adet">0 adet</span></td>
                                     <td class="text-end fw-bold" id="maliyet_paketleme_toplami">0.00 TL</td>
+                                </tr>
+                                <tr>
+                                    <td>Sarf Malzemesi Toplamı <span class="badge bg-secondary ms-1" id="maliyet_sarf_adet">0 adet</span></td>
+                                    <td class="text-end fw-bold" id="maliyet_sarf_toplami">0.00 TL</td>
                                 </tr>
                                 <tr>
                                     <td>Genel Gider Toplamı</td>
@@ -241,16 +263,33 @@
                 if (pList.length > 0) {
                     $.each(pList, function(i, item) {
                         pakHtml += '<tr>' +
-                            '<td>' + item.ad + '</td>' +
-                            '<td class="text-end">' + item.adet + ' Adet</td>' +
-                            '<td class="text-end">' + formatMoney(item.birim_fiyat) + '</td>' +
-                            '<td class="text-end fw-bold">' + formatMoney(item.toplam) + '</td>' +
+                            '<td>' + item.malzeme_adi + '</td>' +
+                            '<td class="text-end">' + item.kullanilan_miktar + ' ' + item.birim + '</td>' +
+                            '<td class="text-end">' + formatMoney(item.son_alis_fiyati) + '</td>' +
+                            '<td class="text-end fw-bold">' + formatMoney(item.satir_toplami) + '</td>' +
                         '</tr>';
                     });
                 } else {
                     pakHtml = '<tr><td colspan="4" class="text-center text-muted">Henüz paketleme malzemesi tanımlanmamış.</td></tr>';
                 }
                 $("#maliyet_paketleme_body").html(pakHtml);
+
+                // Sarf
+                var sList = response.sarf || [];
+                var sarfHtml = '';
+                if (sList.length > 0) {
+                    $.each(sList, function(i, item) {
+                        sarfHtml += '<tr>' +
+                            '<td>' + item.malzeme_adi + '</td>' +
+                            '<td class="text-end">' + item.kullanilan_miktar + ' ' + item.birim + '</td>' +
+                            '<td class="text-end">' + formatMoney(item.son_alis_fiyati) + '</td>' +
+                            '<td class="text-end fw-bold">' + formatMoney(item.satir_toplami) + '</td>' +
+                        '</tr>';
+                    });
+                } else {
+                    sarfHtml = '<tr><td colspan="4" class="text-center text-muted">Sarf malzemesi bulunmuyor.</td></tr>';
+                }
+                $("#maliyet_sarf_body").html(sarfHtml);
 
                 // Genel Giderler
                 var gList = response.genel_giderler || [];
@@ -270,12 +309,19 @@
                 $("#maliyet_genel_gider_body").html(gHtml);
 
                 // Totals
+                var ozet = response.ozet || {};
                 var t = response.toplam || {};
-                $("#maliyet_hamur_toplami").text(formatMoney(t.hamur_toplami));
-                $("#maliyet_malzeme_toplami").text(formatMoney(t.malzeme_toplami));
-                $("#maliyet_paketleme_toplami").text(formatMoney(t.paketleme_toplami));
+                $("#maliyet_hamur_toplami").text(formatMoney(ozet.tophamur || ozet.toplam_hamur));
+                $("#maliyet_malzeme_toplami").text(formatMoney(ozet.toplam_malzeme));
+                $("#maliyet_paketleme_toplami").text(formatMoney(ozet.toplam_paketleme));
+                $("#maliyet_sarf_toplami").text(formatMoney(ozet.toplam_sarf));
                 $("#maliyet_genel_gider_toplami").text(formatMoney(t.genel_gider_toplami));
-                $("#maliyet_genel_toplam").text(formatMoney(t.toplam_urun_maliyet));
+                $("#maliyet_genel_toplam").text(formatMoney(parseFloat(ozet.toplam_maliyet || 0) + parseFloat(t.genel_gider_toplami || 0)));
+
+                // Item Counts
+                $("#maliyet_malzeme_adet").text((ozet.adet_malzeme || 0) + " adet");
+                $("#maliyet_paketleme_adet").text((ozet.adet_paketleme || 0) + " adet");
+                $("#maliyet_sarf_adet").text((ozet.adet_sarf || 0) + " adet");
 
                 // Metadata
                 var meta = response.son_guncelleme || {};

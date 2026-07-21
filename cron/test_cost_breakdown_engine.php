@@ -7,7 +7,7 @@ require_once ($_SERVER['DOCUMENT_ROOT'] . '/controllers/urunController.php');
 
 echo "<pre style='font-family: monospace;'>";
 echo "====================================================\n";
-echo "COST BREAKDOWN ENGINE - AUTOMATED TEST SUITE (21/21)\n";
+echo "COST BREAKDOWN ENGINE - AUTOMATED TEST SUITE (38/38)\n";
 echo "====================================================\n\n";
 
 $pass_count = 0;
@@ -70,7 +70,7 @@ assertTest($genel_gider_valid, "Genel gider placeholder doğru döndü");
 
 // Assertion 7: Toplam maliyet ara toplamların toplamına eşit
 $toplam = $breakdown['toplam'];
-$calculated_grand_total = floatval($toplam['hamur_toplami']) + floatval($toplam['malzeme_toplami']) + floatval($toplam['paketleme_toplami']) + floatval($toplam['genel_gider_toplami']);
+$calculated_grand_total = floatval($toplam['hamur_toplami']) + floatval($toplam['malzeme_toplami']) + floatval($toplam['paketleme_toplami']) + floatval($toplam['sarf_toplami']) + floatval($toplam['genel_gider_toplami']);
 $grand_total_valid = abs($calculated_grand_total - floatval($toplam['toplam_urun_maliyet'])) < 0.01;
 assertTest($grand_total_valid, "Toplam maliyet ara toplamların toplamına eşit");
 
@@ -177,6 +177,75 @@ assertTest($siparis_ok, "Sipariş Detay (siparis_detay.php) maliyet tetikleyicis
 $c_rapor = file_get_contents($_SERVER['DOCUMENT_ROOT'] . '/views/rapor/siparis_detay_rapor.php');
 $rapor_ok = strpos($c_rapor, 'fncMaliyetGoster') !== false && strpos($c_rapor, '$cTheme->Scriptler()') !== false;
 assertTest($rapor_ok, "Sipariş Detay Raporu (siparis_detay_rapor.php) maliyet tetikleyicisi ve Theme::Scriptler() (modal DOM & JS) içeriyor");
+
+// Assertion 30: Her URUN_RECETE satırı tam olarak bir kez kategorize edildi
+$db_recete = DB::get("SELECT MALZEME_ID FROM URUN_RECETE WHERE URUN_ID = :URUN_ID", [':URUN_ID' => $urun_id]);
+$db_ids = array_map(function($r) { return intval($r->MALZEME_ID); }, $db_recete);
+
+$m_ids = array_map(function($x) { return $x['malzeme_id']; }, $breakdown['malzemeler']);
+$p_ids = array_map(function($x) { return $x['malzeme_id']; }, $breakdown['paketleme']);
+$s_ids = array_map(function($x) { return $x['malzeme_id']; }, $breakdown['sarf']);
+
+$all_returned_ids = array_merge($m_ids, $p_ids, $s_ids);
+
+$categorized_exactly_once = true;
+foreach ($db_ids as $id) {
+    $count = 0;
+    foreach ($all_returned_ids as $ret_id) {
+        if ($ret_id === $id) $count++;
+    }
+    if ($count !== 1) {
+        $categorized_exactly_once = false;
+    }
+}
+assertTest($categorized_exactly_once, "Her URUN_RECETE satırı tam olarak bir kez kategorize edildi");
+
+// Assertion 31: Hiçbir reçete satırı mükerrer (duplicate) olarak işlenmedi
+$no_duplicates = (count($all_returned_ids) === count(array_unique($all_returned_ids)));
+assertTest($no_duplicates, "Hiçbir reçete satırı mükerrer (duplicate) olarak işlenmedi");
+
+// Assertion 32: Hiçbir reçete satırı kaybolmadı (lost)
+$lost_check = true;
+foreach ($db_ids as $id) {
+    if (!in_array($id, $all_returned_ids)) {
+        $lost_check = false;
+    }
+}
+assertTest($lost_check, "Hiçbir reçete satırı kaybolmadı (lost)");
+
+// Assertion 33: Sum(Materials + Packaging + Consumables) equals the recipe subtotal
+$subtotal_sum = floatval($breakdown['ozet']['toplam_malzeme']) + floatval($breakdown['ozet']['toplam_paketleme']) + floatval($breakdown['ozet']['toplam_sarf']);
+$subtotal_match = abs($subtotal_sum - (floatval($breakdown['toplam']['malzeme_toplami']) + floatval($breakdown['toplam']['paketleme_toplami']) + floatval($breakdown['toplam']['sarf_toplami']))) < 0.01;
+assertTest($subtotal_match, "Kategori toplamları ara toplama tam eşit");
+
+// Assertion 34: Recipe subtotal + Dough Cost equals Total Product Cost
+$expected_total = $subtotal_sum + floatval($breakdown['ozet']['toplam_hamur']);
+$total_match = abs($expected_total - floatval($breakdown['ozet']['toplam_maliyet'])) < 0.01;
+assertTest($total_match, "Ara toplam + Hamur maliyeti toplam maliyete eşit");
+
+// Assertion 35: Legacy wrapper functions return expected results matching getMaliyetDetayi
+$reflector = new ReflectionMethod('UrunMaliyetService', 'calculateMalzemeCost');
+$reflector->setAccessible(true);
+$legacy_malzeme = $reflector->invoke(null, $urun_id);
+$legacy_malzeme_match = abs($legacy_malzeme['toplam'] - $breakdown['ozet']['toplam_malzeme']) < 0.01;
+assertTest($legacy_malzeme_match, "calculateMalzemeCost sarmalayıcısı doğru çalışıyor");
+
+// Assertion 36: JSON sözleşmesinde version 1 alanı mevcut
+$version_valid = isset($breakdown['version']) && $breakdown['version'] === 1;
+assertTest($version_valid, "JSON sözleşmesinde version 1 alanı mevcut");
+
+// Assertion 37: Özet alanında adet_malzeme, adet_paketleme, adet_sarf alanları mevcut
+$counts_exist = isset($breakdown['ozet']['adet_malzeme']) && isset($breakdown['ozet']['adet_paketleme']) && isset($breakdown['ozet']['adet_sarf']);
+assertTest($counts_exist, "Özet alanında satır adetleri mevcut");
+
+// Assertion 38: Her reçete satırına kategori ve kategori_kodu metadata alanları eklendi
+$meta_ok = true;
+foreach (array_merge($breakdown['malzemeler'], $breakdown['paketleme'], $breakdown['sarf']) as $item) {
+    if (empty($item['kategori_kodu']) || empty($item['kategori'])) {
+        $meta_ok = false;
+    }
+}
+assertTest($meta_ok, "Her reçete satırına kategori ve kategori_kodu metadata alanları eklendi");
 
 echo "\n====================================================\n";
 echo "RESULT: PASS: $pass_count / FAIL: $fail_count\n";

@@ -16,93 +16,15 @@ class UrunMaliyetService {
 
         $bugun = date("Y-m-d");
 
-        $sql = "SELECT U.*, HK.KATSAYI, HK.DURUM AS HAMUR_KULLANIM_DURUM 
-                FROM URUN AS U 
-                LEFT JOIN HAMUR_KULLANIM AS HK ON HK.ID = U.HAMUR_KULLANIM_ID 
-                WHERE U.ID = :URUN_ID AND U.DURUM = 1";
+        $sql = "SELECT U.* FROM URUN AS U WHERE U.ID = :URUN_ID";
         $row_urun = DB::getRow($sql, [':URUN_ID' => $urun_id]);
 
         if (!$row_urun || !$row_urun->ID) {
             return 0;
         }
 
-        $row_site = DB::getRow("SELECT HAMUR_MALIYET, KRUVASAN_MALIYET FROM SITE LIMIT 1");
-        $hamur_maliyet = $row_site ? floatval($row_site->HAMUR_MALIYET) : 0;
-        $kruvasan_maliyet = $row_site ? floatval($row_site->KRUVASAN_MALIYET) : 0;
-
-        $toplam_maliyet = 0;
-
-        $sql = "SELECT 
-                    UR.*,
-                    M.MALZEME,
-                    M.FIYAT AS MALZEME_FIYAT,
-                    MT.KODU AS MALZEME_TIPI_KODU,
-                    B.KODU AS BIRIM_KODU
-                FROM URUN_RECETE AS UR
-                    LEFT JOIN MALZEME AS M ON M.ID = UR.MALZEME_ID
-                    LEFT JOIN MALZEME_TIPI AS MT ON MT.ID = M.MALZEME_TIPI_ID
-                    LEFT JOIN BIRIM AS B ON B.ID = M.TEMEL_BIRIM_ID
-                WHERE UR.URUN_ID = :URUN_ID";
-        $rows_recete = DB::get($sql, [':URUN_ID' => $urun_id]);
-
-        if ($rows_recete) {
-            foreach ($rows_recete as $row_recete) {
-                // Find latest purchase unit price from MALZEME_ALIS_DETAY
-                $sql = "SELECT MAD.BIRIM_FIYAT, MA.FATURA_TARIH 
-                        FROM MALZEME_ALIS_DETAY AS MAD
-                        LEFT JOIN MALZEME_ALIS AS MA ON MA.ID = MAD.MALZEME_ALIS_ID
-                        WHERE MAD.MALZEME_ID = :MALZEME_ID AND MA.DURUM = 1
-                        ORDER BY MA.FATURA_TARIH DESC, MAD.ID DESC LIMIT 1";
-                $row_alis = DB::getRow($sql, [':MALZEME_ID' => $row_recete->MALZEME_ID]);
-
-                if ($row_alis && $row_alis->BIRIM_FIYAT !== null) {
-                    $birim_fiyat = floatval($row_alis->BIRIM_FIYAT);
-                } else {
-                    // Fallback to material price if no active purchase invoice exists
-                    $birim_fiyat = floatval($row_recete->MALZEME_FIYAT);
-                }
-
-                if ($row_recete->MALZEME_TIPI_KODU == 'PKG' || $row_recete->BIRIM_KODU == 'ADT') {
-                    $birim_maliyet = $birim_fiyat;
-                } else {
-                    $birim_maliyet = $birim_fiyat / 1000;
-                }
-
-                $malzeme_tutar = floatval($row_recete->MIKTAR) * $birim_maliyet;
-                $toplam_maliyet += $malzeme_tutar;
-            }
-        }
-
-        $genel_maliyet = $toplam_maliyet;
-
-        if (in_array($row_urun->KATEGORI_ID, array(6))) { // Kruvasan
-            $genel_maliyet = $toplam_maliyet + $kruvasan_maliyet;
-        } else if (in_array($row_urun->KATEGORI_ID, array(4))) { // İçecek
-            $sql = "SELECT MAD.BIRIM_FIYAT
-                    FROM MALZEME_ALIS_DETAY AS MAD
-                    LEFT JOIN MALZEME_ALIS AS MA ON MA.ID = MAD.MALZEME_ALIS_ID
-                    LEFT JOIN MALZEME AS M ON M.ID = MAD.MALZEME_ID
-                    WHERE M.URUN_ID = :URUN_ID AND MA.DURUM = 1
-                    ORDER BY MA.FATURA_TARIH DESC, MAD.ID DESC LIMIT 1";
-            $row_alis_icecek = DB::getRow($sql, [':URUN_ID' => $urun_id]);
-
-            if ($row_alis_icecek && $row_alis_icecek->BIRIM_FIYAT !== null) {
-                $genel_maliyet = floatval($row_alis_icecek->BIRIM_FIYAT);
-            } else {
-                $sql = "SELECT FIYAT FROM MALZEME WHERE URUN_ID = :URUN_ID LIMIT 1";
-                $row_m_icecek = DB::getRow($sql, [':URUN_ID' => $urun_id]);
-                if ($row_m_icecek && $row_m_icecek->FIYAT !== null) {
-                    $genel_maliyet = floatval($row_m_icecek->FIYAT);
-                }
-            }
-        } else {
-            // Dynamic Dough Cost = Tam Hamur Maliyeti * KATSAYI
-            $katsayi = ($row_urun->HAMUR_KULLANIM_ID > 0 && $row_urun->HAMUR_KULLANIM_DURUM == 1 && $row_urun->KATSAYI !== null) 
-                       ? floatval($row_urun->KATSAYI) 
-                       : 1.00;
-            $hamur_hesaplanan_maliyet = $hamur_maliyet * $katsayi;
-            $genel_maliyet = $toplam_maliyet + $hamur_hesaplanan_maliyet;
-        }
+        $detay = self::getMaliyetDetayi($urun_id, false);
+        $genel_maliyet = floatval($detay['ozet']['toplam_maliyet']);
 
         // Save or update in URUN_MALIYET table
         $sql = "SELECT ID FROM URUN_MALIYET WHERE URUN_ID = :URUN_ID AND MALIYET_TARIH = :MALIYET_TARIH";
@@ -390,9 +312,7 @@ class UrunMaliyetService {
             );
         }
 
-        $row_site = DB::getRow("SELECT HAMUR_MALIYET, KRUVASAN_MALIYET, GTARIH FROM SITE LIMIT 1");
-
-        // Determine Product Type Strategy (WAFFLE, KRUVASAN, ICECEK, DIGER)
+        $row_site = DB::getRow("SELECT HAMUR_MALIYET, KRUVASAN_MALIYET, GTARIH FROM SITE LIMIT 1");        // Determine Product Type Strategy (WAFFLE, KRUVASAN, ICECEK, DIGER)
         $urun_tipi = "WAFFLE";
         if (in_array(intval($row_urun->KATEGORI_ID), array(6))) {
             $urun_tipi = "KRUVASAN";
@@ -402,13 +322,25 @@ class UrunMaliyetService {
             $urun_tipi = "DIGER";
         }
 
+        $recipe_data = self::calculateRecipeCosts($urun_id);
+
         $hamur_data = self::calculateHamurCost($row_urun, $row_site, $urun_tipi);
-        $malzemeler_data = self::calculateMalzemeCost($urun_id);
-        $paketleme_data = self::calculatePaketlemeCost($urun_id);
+        $malzemeler_data = array(
+            "toplam" => $recipe_data['toplam_malzeme'],
+            "result" => $recipe_data['malzemeler']
+        );
+        $paketleme_data = array(
+            "toplam" => $recipe_data['toplam_paketleme'],
+            "result" => $recipe_data['paketleme']
+        );
+        $sarf_data = array(
+            "toplam" => $recipe_data['toplam_sarf'],
+            "result" => $recipe_data['sarf']
+        );
         $genel_giderler_data = self::calculateGenelGiderCost($urun_id);
 
-        $toplam_data = self::calculateToplamCost($hamur_data, $malzemeler_data, $paketleme_data, $genel_giderler_data);
-        $son_guncelleme_data = self::getLastUpdateMetadata($urun_id, $malzemeler_data['rows'], $row_site);
+        $toplam_data = self::calculateToplamCost($hamur_data, $malzemeler_data, $paketleme_data, $sarf_data, $genel_giderler_data);
+        $son_guncelleme_data = self::getLastUpdateMetadata($urun_id, $recipe_data['rows'], $row_site);
 
         $result = array(
             "version" => 1,
@@ -426,8 +358,19 @@ class UrunMaliyetService {
             "hamur" => $hamur_data['result'],
             "malzemeler" => $malzemeler_data['result'],
             "paketleme" => $paketleme_data['result'],
+            "sarf" => $sarf_data['result'],
             "genel_giderler" => $genel_giderler_data['result'],
             "toplam" => $toplam_data,
+            "ozet" => array(
+                "toplam_hamur" => round($hamur_data['toplam'], 4),
+                "toplam_malzeme" => round($recipe_data['toplam_malzeme'], 4),
+                "toplam_paketleme" => round($recipe_data['toplam_paketleme'], 4),
+                "toplam_sarf" => round($recipe_data['toplam_sarf'], 4),
+                "toplam_maliyet" => round($hamur_data['toplam'] + $recipe_data['toplam_malzeme'] + $recipe_data['toplam_paketleme'] + $recipe_data['toplam_sarf'], 4),
+                "adet_malzeme" => count($recipe_data['malzemeler']),
+                "adet_paketleme" => count($recipe_data['paketleme']),
+                "adet_sarf" => count($recipe_data['sarf'])
+            ),
             "analizler" => array(
                 "komisyon" => null,
                 "karlilik" => null,
@@ -485,9 +428,11 @@ class UrunMaliyetService {
     }
 
     /**
-     * Modular Helper: Material Recipe Cost Calculation (N+1 SQL JOIN Optimized)
+     * Private Internal Engine: Fetches and categorizes all recipe rows in a single iteration.
+     * Every recipe row belongs to exactly one category: Materials, Packaging or Consumables.
+     * Categorization happens dynamically inside this loop.
      */
-    private static function calculateMalzemeCost($urun_id) {
+    private static function calculateRecipeCosts($urun_id) {
         $sql = "SELECT 
                     UR.MIKTAR,
                     M.ID AS MALZEME_ID,
@@ -523,8 +468,14 @@ class UrunMaliyetService {
                 WHERE UR.URUN_ID = :URUN_ID";
 
         $rows = DB::get($sql, array(':URUN_ID' => $urun_id));
-        $list = array();
-        $malzeme_toplami = 0.00;
+
+        $malzemeler = array();
+        $paketleme = array();
+        $sarf = array();
+
+        $toplam_malzeme = 0.00;
+        $toplam_paketleme = 0.00;
+        $toplam_sarf = 0.00;
 
         if ($rows) {
             foreach ($rows as $row) {
@@ -534,7 +485,7 @@ class UrunMaliyetService {
                     $son_alis_fiyati = floatval($row->MALZEME_FIYAT);
                 }
 
-                if ($row->MALZEME_TIPI == 'PKG' || $row->BIRIM == 'ADT') {
+                if ($row->MALZEME_TIPI == 'PKG' || $row->MALZEME_TIPI == 'CONS' || $row->BIRIM == 'ADT') {
                     $birim_maliyet = $son_alis_fiyati;
                 } else {
                     $birim_maliyet = $son_alis_fiyati / 1000;
@@ -542,15 +493,28 @@ class UrunMaliyetService {
 
                 $kullanilan_miktar = floatval($row->MIKTAR);
                 $satir_toplami = $kullanilan_miktar * $birim_maliyet;
-                $malzeme_toplami += $satir_toplami;
 
-                $list[] = array(
+                // Centralized Categorization
+                $kategori_kodu = 'malzemeler';
+                $kategori = 'Malzeme';
+                if ($row->MALZEME_TIPI == 'PKG') {
+                    $kategori_kodu = 'paketleme';
+                    $kategori = 'Paketleme';
+                } else if ($row->MALZEME_TIPI == 'CONS') {
+                    $kategori_kodu = 'sarf';
+                    $kategori = 'Sarf Malzemesi';
+                }
+
+                $item = array(
+                    "malzeme_id" => intval($row->MALZEME_ID),
                     "malzeme_adi" => $row->MALZEME_ADI,
-                    "malzeme_tipi" => $row->MALZEME_TIPI ? $row->MALZEME_TIPI : "HAM",
+                    "malzeme_tipi" => $row->MALZEME_TIPI ? $row->MALZEME_TIPI : "RAW",
                     "kullanilan_miktar" => round($kullanilan_miktar, 4),
                     "birim" => $row->BIRIM ? $row->BIRIM : "GR",
                     "son_alis_fiyati" => round($son_alis_fiyati, 4),
                     "satir_toplami" => round($satir_toplami, 4),
+                    "kategori_kodu" => $kategori_kodu,
+                    "kategori" => $kategori,
                     "metadata" => array(
                         "tedarikci" => $row->TEDARIKCI ? $row->TEDARIKCI : null,
                         "fatura_no" => $row->FATURA_NO ? $row->FATURA_NO : null,
@@ -558,28 +522,62 @@ class UrunMaliyetService {
                         "son_guncelleme_tarihi" => $row->ALIS_GUNCELLEME_TARIHI ? $row->ALIS_GUNCELLEME_TARIHI : null
                     )
                 );
+
+                if ($kategori_kodu == 'paketleme') {
+                    $paketleme[] = $item;
+                    $toplam_paketleme += $satir_toplami;
+                } else if ($kategori_kodu == 'sarf') {
+                    $sarf[] = $item;
+                    $toplam_sarf += $satir_toplami;
+                } else {
+                    $malzemeler[] = $item;
+                    $toplam_malzeme += $satir_toplami;
+                }
             }
         }
 
         return array(
-            "toplam" => round($malzeme_toplami, 4),
-            "result" => $list,
+            "malzemeler" => $malzemeler,
+            "paketleme" => $paketleme,
+            "sarf" => $sarf,
+            "toplam_malzeme" => round($toplam_malzeme, 4),
+            "toplam_paketleme" => round($toplam_paketleme, 4),
+            "toplam_sarf" => round($toplam_sarf, 4),
             "rows" => $rows
         );
     }
 
     /**
-     * Modular Helper: Packaging Cost Calculation
+     * Legacy Wrapper for Material Recipe Cost Calculation (Thin Wrapper)
+     */
+    private static function calculateMalzemeCost($urun_id) {
+        $costs = self::calculateRecipeCosts($urun_id);
+        return array(
+            "toplam" => $costs['toplam_malzeme'],
+            "result" => $costs['malzemeler'],
+            "rows" => $costs['rows']
+        );
+    }
+
+    /**
+     * Legacy Wrapper for Packaging Cost Calculation (Thin Wrapper)
      */
     private static function calculatePaketlemeCost($urun_id) {
-        // Categories supported: Kap, Kapak, Poşet, Peçete, Çatal, Bıçak, Kaşık, Bardak, Pipet, Diğer
-        // Currently returns [] as packaging is not configured per product yet
-        $list = array();
-        $toplam = 0.00;
-
+        $costs = self::calculateRecipeCosts($urun_id);
         return array(
-            "toplam" => round($toplam, 4),
-            "result" => $list
+            "toplam" => $costs['toplam_paketleme'],
+            "result" => $costs['paketleme']
+        );
+    }
+
+    /**
+     * Legacy Wrapper for Consumables Cost Calculation (Thin Wrapper)
+     */
+    private static function calculateSarfCost($urun_id) {
+        $costs = self::calculateRecipeCosts($urun_id);
+        return array(
+            "toplam" => $costs['toplam_sarf'],
+            "result" => $costs['sarf']
         );
     }
 
@@ -610,18 +608,20 @@ class UrunMaliyetService {
     /**
      * Modular Helper: Total Cost Calculations & Subtotals
      */
-    private static function calculateToplamCost($hamur_data, $malzemeler_data, $paketleme_data, $genel_giderler_data) {
+    private static function calculateToplamCost($hamur_data, $malzemeler_data, $paketleme_data, $sarf_data, $genel_giderler_data) {
         $hamur_toplami = floatval($hamur_data['toplam']);
         $malzeme_toplami = floatval($malzemeler_data['toplam']);
         $paketleme_toplami = floatval($paketleme_data['toplam']);
+        $sarf_toplami = floatval($sarf_data['toplam']);
         $genel_gider_toplami = floatval($genel_giderler_data['toplam']);
 
-        $toplam_urun_maliyet = $hamur_toplami + $malzeme_toplami + $paketleme_toplami + $genel_gider_toplami;
+        $toplam_urun_maliyet = $hamur_toplami + $malzeme_toplami + $paketleme_toplami + $sarf_toplami + $genel_gider_toplami;
 
         return array(
             "hamur_toplami" => round($hamur_toplami, 4),
             "malzeme_toplami" => round($malzeme_toplami, 4),
             "paketleme_toplami" => round($paketleme_toplami, 4),
+            "sarf_toplami" => round($sarf_toplami, 4),
             "genel_gider_toplami" => round($genel_gider_toplami, 4),
             "toplam_urun_maliyet" => round($toplam_urun_maliyet, 4)
         );
