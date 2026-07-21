@@ -140,7 +140,7 @@
                                                         <td nowrap align="right"><?=$row->FIYAT_MAGAZA_TEXT?></td>
                                                         <td nowrap align="right"><?=$row->FIYAT_TELEFON_TEXT?></td>
                                                         <td nowrap align="right"><?=$row->FIYAT_DIS_PLATFORM_TEXT?></td>
-                                                        <td nowrap align="right"><?=$row->MALIYET_TEXT?></td>
+                                                        <td nowrap align="right"><a href="javascript:;" class="text-primary fw-bold fncMaliyetGoster" data-urun-id="<?=$row->ID?>" title="Maliyet Detayı"><?=$row->MALIYET_TEXT?></a></td>
                                                         <td align="center"><?=fncDurumSpan($row->DURUM)?></td>
                                                         <td nowrap>
                                                             <a href="/views/urun/urun_duzenle.php?route=urun/urun_listesi&id=<?=$row->ID?>&token=<?=$row->TOKEN?>" data-bs-toggle="tooltip" class="btn btn-primary btn-icon btn-sm" title="Düzenle"> <i class="ri-pencil-line"></i></a>
@@ -166,9 +166,6 @@
             <div class="layout-overlay layout-menu-toggle"></div>
             <div class="drag-target"></div>
         </div>
-        <?=$cTheme->Scriptler()?>
-    </body>
-</html>
 
 <div class="modal fade" id="subeUrunEkleModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-simple modal-edit-user">
@@ -196,6 +193,8 @@
         </div>
     </div>
 </div>
+
+         <?=$cTheme->Scriptler()?>
 
 <script type="text/javascript">
 
@@ -353,5 +352,7 @@
     });
 
 </script>
+</body>
+</html>
 
 

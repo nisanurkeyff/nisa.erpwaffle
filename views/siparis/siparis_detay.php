@@ -72,7 +72,12 @@
                                                                         <img src="<?=$row_site->LOGO?>" class="rounded-3 me-2" width="100" height="100">
                                                                     <?}?>
                                                                     <div>
-                                                                        <div class="fw-semibold"><?=FormatYazi::kisalt2($row_detay->URUN)?></div>
+                                                                        <div class="fw-semibold">
+                                                                            <?=FormatYazi::kisalt2($row_detay->URUN)?>
+                                                                            <?if($row_detay->URUN_ID > 0){?>
+                                                                                <a href="javascript:;" class="text-primary ms-1 fncMaliyetGoster" data-urun-id="<?=$row_detay->URUN_ID?>" title="Maliyet Detayı"><i class="ri-calculator-line"></i></a>
+                                                                            <?}?>
+                                                                        </div>
                                                                         <div class="text-muted small"><?=$row_detay->MARKA?></div>
                                                                     </div>
                                                                 </div>
@@ -384,5 +389,7 @@
     });
 
 </script>
+</body>
+</html>
 
 

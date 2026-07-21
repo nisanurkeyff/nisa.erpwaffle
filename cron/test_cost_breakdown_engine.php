@@ -140,6 +140,44 @@ $breakdown_recheck = UrunMaliyetService::getMaliyetDetayi($urun_id, true);
 $consistent = (json_encode($breakdown) === json_encode($breakdown_recheck));
 assertTest($consistent, "Aynı ürün için tekrar hesaplamada tutarlı sonuç döndü");
 
+// Assertion 22: Merkezi partial ve DRY yapısı mevcut
+$partial_exists = file_exists($_SERVER['DOCUMENT_ROOT'] . '/views/inc/maliyet_detay_modal.php');
+assertTest($partial_exists, "Merkezi maliyet detay partial dosyası mevcut (DRY)");
+
+// Assertion 23: Ürün metadata düğümü ('urun') standart formatta döndü
+$urun_node_valid = isset($breakdown['urun']) && is_array($breakdown['urun']) && isset($breakdown['urun']['urun_id']) && isset($breakdown['urun']['urun_adi']);
+assertTest($urun_node_valid, "Ürün metadata düğümü ('urun') standart formatta döndü");
+
+// Assertion 24: Gelecek bağlam (context/source) parametre altyapısı destekleniyor
+$test_context = array('source' => 'siparis_detay', 'siparis_detay_id' => 999);
+$breakdown_with_context = UrunMaliyetService::getMaliyetDetayi($urun_id, false, $test_context);
+$context_supported = isset($breakdown_with_context['context']['source']) && $breakdown_with_context['context']['source'] === 'siparis_detay';
+assertTest($context_supported, "Gelecek bağlam (context/source) parametre altyapısı destekleniyor");
+
+// Assertion 25: Extensible JSON Contract ('analizler') düğümü hazırlandı
+$analizler_valid = isset($breakdown['analizler']) && is_array($breakdown['analizler']) && array_key_exists('komisyon', $breakdown['analizler']) && array_key_exists('karlilik', $breakdown['analizler']);
+assertTest($analizler_valid, "Extensible JSON Contract ('analizler') düğümü hazırlandı");
+
+// Assertion 26: Ürün Listesi (urun_listesi.php) maliyet tetikleyicisi ve Theme::Scriptler() (modal DOM & JS) içeriyor
+$c_listesi = file_get_contents($_SERVER['DOCUMENT_ROOT'] . '/views/urun/urun_listesi.php');
+$listesi_ok = strpos($c_listesi, 'fncMaliyetGoster') !== false && strpos($c_listesi, '$cTheme->Scriptler()') !== false;
+assertTest($listesi_ok, "Ürün Listesi (urun_listesi.php) maliyet tetikleyicisi ve Theme::Scriptler() (modal DOM & JS) içeriyor");
+
+// Assertion 27: Ürün Düzenle (urun_duzenle.php) maliyet tetikleyicisi ve Theme::Scriptler() (modal DOM & JS) içeriyor
+$c_duzenle = file_get_contents($_SERVER['DOCUMENT_ROOT'] . '/views/urun/urun_duzenle.php');
+$duzenle_ok = strpos($c_duzenle, 'anlik_maliyet') !== false && strpos($c_duzenle, '$cTheme->Scriptler()') !== false;
+assertTest($duzenle_ok, "Ürün Düzenle (urun_duzenle.php) maliyet tetikleyicisi ve Theme::Scriptler() (modal DOM & JS) içeriyor");
+
+// Assertion 28: Sipariş Detay (siparis_detay.php) maliyet tetikleyicisi ve Theme::Scriptler() (modal DOM & JS) içeriyor
+$c_siparis = file_get_contents($_SERVER['DOCUMENT_ROOT'] . '/views/siparis/siparis_detay.php');
+$siparis_ok = strpos($c_siparis, 'fncMaliyetGoster') !== false && strpos($c_siparis, '$cTheme->Scriptler()') !== false;
+assertTest($siparis_ok, "Sipariş Detay (siparis_detay.php) maliyet tetikleyicisi ve Theme::Scriptler() (modal DOM & JS) içeriyor");
+
+// Assertion 29: Sipariş Detay Raporu (siparis_detay_rapor.php) maliyet tetikleyicisi ve Theme::Scriptler() (modal DOM & JS) içeriyor
+$c_rapor = file_get_contents($_SERVER['DOCUMENT_ROOT'] . '/views/rapor/siparis_detay_rapor.php');
+$rapor_ok = strpos($c_rapor, 'fncMaliyetGoster') !== false && strpos($c_rapor, '$cTheme->Scriptler()') !== false;
+assertTest($rapor_ok, "Sipariş Detay Raporu (siparis_detay_rapor.php) maliyet tetikleyicisi ve Theme::Scriptler() (modal DOM & JS) içeriyor");
+
 echo "\n====================================================\n";
 echo "RESULT: PASS: $pass_count / FAIL: $fail_count\n";
 echo "====================================================\n";

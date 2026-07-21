@@ -289,10 +289,12 @@ class UrunMaliyetService {
      * 
      * @param int $urun_id
      * @param bool $useCache
+     * @param array $context Future context options (source, siparis_detay_id, etc.)
      * @return array
      */
-    public static function getMaliyetDetayi($urun_id, $useCache = true) {
+    public static function getMaliyetDetayi($urun_id, $useCache = true, $context = array()) {
         $urun_id = intval($urun_id);
+        $context = is_array($context) ? $context : array();
 
         if ($urun_id <= 0) {
             return array(
@@ -300,6 +302,14 @@ class UrunMaliyetService {
                 "urun_id" => 0,
                 "urun_adi" => "",
                 "urun_tipi" => "DIGER",
+                "urun" => array(
+                    "urun_id" => 0,
+                    "urun_kodu" => null,
+                    "urun_adi" => "",
+                    "kategori_id" => 0,
+                    "kategori" => null
+                ),
+                "context" => $context,
                 "hamur" => array(),
                 "malzemeler" => array(),
                 "paketleme" => array(),
@@ -311,6 +321,12 @@ class UrunMaliyetService {
                     "genel_gider_toplami" => 0.00,
                     "toplam_urun_maliyet" => 0.00
                 ),
+                "analizler" => array(
+                    "komisyon" => null,
+                    "karlilik" => null,
+                    "indirim_kampanya" => null,
+                    "platform_maliyeti" => null
+                ),
                 "son_guncelleme" => array(
                     "son_hesaplama_tarihi" => null,
                     "son_recete_guncellemesi" => null,
@@ -320,15 +336,16 @@ class UrunMaliyetService {
             );
         }
 
-        if ($useCache) {
+        if ($useCache && empty($context)) {
             $cached = self::getCachedMaliyetDetayi($urun_id);
             if ($cached !== null) {
                 return $cached;
             }
         }
 
-        $sql = "SELECT U.*, HK.KATSAYI, HK.HAMUR_KULLANIM, HK.DURUM AS HAMUR_KULLANIM_DURUM 
+        $sql = "SELECT U.*, K.KATEGORI, HK.KATSAYI, HK.HAMUR_KULLANIM, HK.DURUM AS HAMUR_KULLANIM_DURUM 
                 FROM URUN AS U 
+                LEFT JOIN KATEGORI AS K ON K.ID = U.KATEGORI_ID
                 LEFT JOIN HAMUR_KULLANIM AS HK ON HK.ID = U.HAMUR_KULLANIM_ID 
                 WHERE U.ID = :URUN_ID";
         $row_urun = DB::getRow($sql, array(':URUN_ID' => $urun_id));
@@ -339,6 +356,14 @@ class UrunMaliyetService {
                 "urun_id" => $urun_id,
                 "urun_adi" => "",
                 "urun_tipi" => "DIGER",
+                "urun" => array(
+                    "urun_id" => $urun_id,
+                    "urun_kodu" => null,
+                    "urun_adi" => "",
+                    "kategori_id" => 0,
+                    "kategori" => null
+                ),
+                "context" => $context,
                 "hamur" => array(),
                 "malzemeler" => array(),
                 "paketleme" => array(),
@@ -349,6 +374,12 @@ class UrunMaliyetService {
                     "paketleme_toplami" => 0.00,
                     "genel_gider_toplami" => 0.00,
                     "toplam_urun_maliyet" => 0.00
+                ),
+                "analizler" => array(
+                    "komisyon" => null,
+                    "karlilik" => null,
+                    "indirim_kampanya" => null,
+                    "platform_maliyeti" => null
                 ),
                 "son_guncelleme" => array(
                     "son_hesaplama_tarihi" => null,
@@ -384,15 +415,31 @@ class UrunMaliyetService {
             "urun_id" => $urun_id,
             "urun_adi" => $row_urun->URUN,
             "urun_tipi" => $urun_tipi,
+            "urun" => array(
+                "urun_id" => $urun_id,
+                "urun_kodu" => isset($row_urun->KODU) ? $row_urun->KODU : (isset($row_urun->URUN_KODU) ? $row_urun->URUN_KODU : null),
+                "urun_adi" => $row_urun->URUN,
+                "kategori_id" => intval($row_urun->KATEGORI_ID),
+                "kategori" => isset($row_urun->KATEGORI) ? $row_urun->KATEGORI : null
+            ),
+            "context" => $context,
             "hamur" => $hamur_data['result'],
             "malzemeler" => $malzemeler_data['result'],
             "paketleme" => $paketleme_data['result'],
             "genel_giderler" => $genel_giderler_data['result'],
             "toplam" => $toplam_data,
+            "analizler" => array(
+                "komisyon" => null,
+                "karlilik" => null,
+                "indirim_kampanya" => null,
+                "platform_maliyeti" => null
+            ),
             "son_guncelleme" => $son_guncelleme_data
         );
 
-        self::$cache[$urun_id] = $result;
+        if (empty($context)) {
+            self::$cache[$urun_id] = $result;
+        }
 
         return $result;
     }

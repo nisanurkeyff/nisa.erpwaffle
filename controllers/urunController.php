@@ -2358,8 +2358,12 @@ class UrunController {
             $request = $_REQUEST;
         }
         $urun_id = isset($request['urun_id']) ? intval($request['urun_id']) : (isset($request['id']) ? intval($request['id']) : 0);
+        $context = isset($request['context']) ? (is_array($request['context']) ? $request['context'] : json_decode($request['context'], true)) : array();
+        if (!is_array($context)) {
+            $context = array();
+        }
 
-        return UrunMaliyetService::getMaliyetDetayi($urun_id);
+        return UrunMaliyetService::getMaliyetDetayi($urun_id, true, $context);
     }
 
 }

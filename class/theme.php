@@ -160,6 +160,11 @@
 			        </div>
 			    </div>
 			</footer>
+			<?php
+			if (file_exists($_SERVER['DOCUMENT_ROOT'] . '/views/inc/maliyet_detay_modal.php')) {
+				require_once ($_SERVER['DOCUMENT_ROOT'] . '/views/inc/maliyet_detay_modal.php');
+			}
+			?>
 		  	<?
 		}
 
@@ -269,6 +274,11 @@
 		    <script src="/assets/js/jspdf.umd.min.js"></script>
 
 		    <script src="/assets/js/script.js"></script>
+			<?php
+			if (file_exists($_SERVER['DOCUMENT_ROOT'] . '/views/inc/maliyet_detay_modal.php')) {
+				require_once ($_SERVER['DOCUMENT_ROOT'] . '/views/inc/maliyet_detay_modal.php');
+			}
+			?>
 		    <?
 		}
 	}

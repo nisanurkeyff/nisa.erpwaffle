@@ -216,7 +216,7 @@
                                                         <td nowrap align="right">%<?=FormatSayi::sayi($row->KOMISYON_ORANI, 0)?></td>
                                                         <td nowrap align="right" class="text-danger"><?=FormatSayi::sayi($row->KOMISYON_TUTARI)?> ₺</td>
                                                         <td nowrap align="right" class="fw-semibold"><?=FormatSayi::sayi($row->KOMISYONSUZ_TUTAR)?> ₺</td>
-                                                        <td nowrap align="right" class="text-secondary"><?=FormatSayi::sayi($row->URUN_MALIYETI)?> ₺</td>
+                                                        <td nowrap align="right" class="text-secondary"><a href="javascript:;" class="text-secondary fw-bold fncMaliyetGoster" data-urun-id="<?=$row->URUN_ID?>" title="Maliyet Detayı"><?=FormatSayi::sayi($row->URUN_MALIYETI)?> ₺</a></td>
                                                         <td nowrap align="right" class="<?=$row->NET_KAR > 0 ? 'text-success fw-bold' : ($row->NET_KAR < 0 ? 'text-danger fw-bold' : 'text-dark')?>"><?=FormatSayi::sayi($row->NET_KAR)?> ₺</td>
                                                         <td nowrap align="center"><?=FormatTarih::tarih($row->SIPARIS_TARIH)?></td>
                                                         <td nowrap align="center"><?=!is_null($row->HAZIRLANMA_SURESI) ? $row->HAZIRLANMA_SURESI . " dk" : "-"?></td>
@@ -330,5 +330,7 @@
     });
 
 </script>
+</body>
+</html>
 
 
