@@ -13,9 +13,10 @@
     $excel->sutunEkle("Satış Türü","SATIS_TURU","");
     $excel->sutunEkle("Alerjenler","ALERJENLER","");
     $excel->sutunEkle("Açıklama","ACIKLAMA","");
-    $excel->sutunEkle("Maliyet (₺)","MALIYET_TEXT","");
-    $excel->sutunEkle("Kâr (₺)","KAR_TEXT","");
-    $excel->sutunEkle("Kâr Marjı (%)","KAR_MARJI_TEXT","");
+    $excel->sutunEkle("Mağaza Satış Fiyatı (₺)","FIYAT_MAGAZA_TEXT","");
+    $excel->sutunEkle("Telefon Sipariş Fiyatı (₺)","FIYAT_TELEFON_TEXT","");
+    $excel->sutunEkle("Dış Platform Satış Fiyatı (₺)","FIYAT_DIS_PLATFORM_TEXT","");
+    $excel->sutunEkle("Anlık Maliyet (₺)","MALIYET_TEXT","");
     $excel->sutunEkle("Durum","DURUM_TEXT","");
     $excelOut = $excel->excel();
     
@@ -114,9 +115,10 @@
                                                     <td nowrap>Ürün</td>
                                                     <td nowrap>Kategori</td>
                                                     <td nowrap>Açıklama</td>
-                                                    <td nowrap align="right">Maliyet (₺)</td>
-                                                    <td nowrap align="right">Kâr (₺)</td>
-                                                    <td nowrap align="right">Kâr Marjı (%)</td>
+                                                    <td nowrap align="right">Mağaza Satış Fiyatı (₺)</td>
+                                                    <td nowrap align="right">Telefon Sipariş Fiyatı (₺)</td>
+                                                    <td nowrap align="right">Dış Platform Satış Fiyatı (₺)</td>
+                                                    <td nowrap align="right">Anlık Maliyet (₺)</td>
                                                     <td nowrap align="center">Durum</td>
                                                     <td nowrap></td>
                                                 </tr>
@@ -135,9 +137,10 @@
                                                         <td><?=FormatYazi::kisalt2($row->URUN,25)?></td>
                                                         <td><?=$row->KATEGORI?></td>
                                                         <td><?=FormatYazi::kisalt2($row->ACIKLAMA)?></td>
+                                                        <td nowrap align="right"><?=$row->FIYAT_MAGAZA_TEXT?></td>
+                                                        <td nowrap align="right"><?=$row->FIYAT_TELEFON_TEXT?></td>
+                                                        <td nowrap align="right"><?=$row->FIYAT_DIS_PLATFORM_TEXT?></td>
                                                         <td nowrap align="right"><?=$row->MALIYET_TEXT?></td>
-                                                        <td nowrap align="right"><?=$row->KAR_TEXT?></td>
-                                                        <td nowrap align="right"><?=$row->KAR_MARJI_TEXT?></td>
                                                         <td align="center"><?=fncDurumSpan($row->DURUM)?></td>
                                                         <td nowrap>
                                                             <a href="/views/urun/urun_duzenle.php?route=urun/urun_listesi&id=<?=$row->ID?>&token=<?=$row->TOKEN?>" data-bs-toggle="tooltip" class="btn btn-primary btn-icon btn-sm" title="Düzenle"> <i class="ri-pencil-line"></i></a>

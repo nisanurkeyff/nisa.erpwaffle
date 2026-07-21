@@ -3,7 +3,7 @@
     session_kontrol();
 
     // Query active products
-    $rows_urunler = DB::get("SELECT ID, URUN, FIYAT FROM URUN WHERE DURUM = '1' ORDER BY URUN ASC");
+    $rows_urunler = DB::get("SELECT ID, URUN, FIYAT_MAGAZA, FIYAT_TELEFON, FIYAT_DIS_PLATFORM FROM URUN WHERE DURUM = '1' ORDER BY URUN ASC");
 
     // Query active extra materials
     $rows_ekstralar = DB::get("SELECT ID, MALZEME, EKSTRA_FIYAT FROM MALZEME WHERE DURUM = '1' AND EKSTRA = '1' ORDER BY MALZEME ASC");
@@ -104,9 +104,10 @@
                                                     <div class="form-floating form-floating-outline">
                                                         <select id="select_urun" class="select2 form-select" data-style="btn-default">
                                                             <option value="" data-fiyat="0">-- Ürün Seçiniz --</option>
-                                                            <?foreach ($rows_urunler as $urun){?>
-                                                                <option value="<?=$urun->ID?>" data-fiyat="<?=$urun->FIYAT?>">
-                                                                    <?=$urun->URUN?> (<?=FormatSayi::sayi($urun->FIYAT)?> ₺)
+                                                            <?foreach ($rows_urunler as $urun){ 
+                                                                $uFiyat = UrunFiyatService::getUrunSatisFiyati($urun, UrunFiyatService::TUR_MAGAZA);?>
+                                                                <option value="<?=$urun->ID?>" data-fiyat="<?=$uFiyat?>">
+                                                                    <?=$urun->URUN?> (<?=FormatSayi::sayi($uFiyat)?> ₺)
                                                                 </option>
                                                             <?}?>
                                                         </select>
@@ -323,7 +324,8 @@
     // Local registries
     var activeProducts = {
         <?foreach ($rows_urunler as $u) {
-            echo intval($u->ID) . ": { id: " . intval($u->ID) . ", name: '" . addslashes($u->URUN) . "', price: " . floatval($u->FIYAT) . " },\n";
+            $uPrice = UrunFiyatService::getUrunSatisFiyati($u, UrunFiyatService::TUR_MAGAZA);
+            echo intval($u->ID) . ": { id: " . intval($u->ID) . ", name: '" . addslashes($u->URUN) . "', price: " . floatval($uPrice) . " },\n";
         }?>
     };
 

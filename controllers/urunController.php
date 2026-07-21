@@ -258,16 +258,31 @@ class UrunController {
             return $result;
         }
 
-        if(FormatSayi::sayi2db($_REQUEST['fiyat']) <= 0){
-            $result["HATA"]          = TRUE;
-            $result["ACIKLAMA"]      = "Fiyat Giriniz!";
-            return $result;
-        }
-       
-
         if($_REQUEST['kategori_id'] <= 0){
             $result["HATA"]          = TRUE;
             $result["ACIKLAMA"]      = "Kategori Seçiniz!";
+            return $result;
+        }
+
+        // Validate prices via service
+        $magazaNorm = UrunFiyatService::normalizePriceInput($_REQUEST['fiyat_magaza'] ?? $_REQUEST['fiyat'] ?? null);
+        if (!$magazaNorm['valid'] || $magazaNorm['value'] === null || $magazaNorm['value'] <= 0) {
+            $result["HATA"]          = TRUE;
+            $result["ACIKLAMA"]      = "Mağaza Satış Fiyatı Giriniz!" . ($magazaNorm['error'] ? " ({$magazaNorm['error']})" : "");
+            return $result;
+        }
+
+        $telefonNorm = UrunFiyatService::normalizePriceInput($_REQUEST['fiyat_telefon'] ?? null);
+        if (!$telefonNorm['valid']) {
+            $result["HATA"]          = TRUE;
+            $result["ACIKLAMA"]      = "Telefon Fiyatı: " . $telefonNorm['error'];
+            return $result;
+        }
+
+        $disNorm = UrunFiyatService::normalizePriceInput($_REQUEST['fiyat_dis_platform'] ?? null);
+        if (!$disNorm['valid']) {
+            $result["HATA"]          = TRUE;
+            $result["ACIKLAMA"]      = "Dış Platform Fiyatı: " . $disNorm['error'];
             return $result;
         }
 
@@ -276,19 +291,28 @@ class UrunController {
                                         ACIKLAMA            = :ACIKLAMA,
                                         KATEGORI_ID         = :KATEGORI_ID,
                                         HAMUR_KULLANIM_ID   = :HAMUR_KULLANIM_ID,
-                                        FIYAT               = :FIYAT,
+                                        FIYAT_MAGAZA        = :FIYAT_MAGAZA,
+                                        FIYAT_TELEFON       = :FIYAT_TELEFON,
+                                        FIYAT_DIS_PLATFORM  = :FIYAT_DIS_PLATFORM,
                                         DURUM               = :DURUM,
                                         KAYIT_YAPAN_ID      = :KAYIT_YAPAN_ID,
                                         TOKEN               = MD5(NOW())
                                         ";
         $data[":URUN"]                  = trim($_REQUEST['urun']);
         $data[":ACIKLAMA"]              = trim($_REQUEST['aciklama']);
-        $data[":FIYAT"]                 = FormatSayi::sayi2db($_REQUEST['fiyat']);
+        $data[":FIYAT_MAGAZA"]          = $magazaNorm['value'];
+        $data[":FIYAT_TELEFON"]         = $telefonNorm['value'];
+        $data[":FIYAT_DIS_PLATFORM"]    = $disNorm['value'];
         $data[":KATEGORI_ID"]           = $_REQUEST['kategori_id'];
         $data[":HAMUR_KULLANIM_ID"]     = $_REQUEST['hamur_kullanim_id'];
         $data[":DURUM"]                 = $_REQUEST['durum'];
         $data[":KAYIT_YAPAN_ID"]        = $_SESSION['kullanici_id'];
         $id = DB::insert($sql, $data);
+
+        if ($id > 0) {
+            // Log initial price creation
+            UrunFiyatService::saveUrunSatisFiyatlari($id, $_REQUEST, $_SESSION['kullanici_id'], "Ürün oluşturuldu.");
+        }
 
         $data = array();
         $sql = "SELECT * FROM URUN WHERE ID = :ID";
@@ -360,17 +384,19 @@ class UrunController {
 
             foreach ($rows as $row) {
                 $maliyet = isset($maliyetler[$row->ID]) ? $maliyetler[$row->ID] : null;
-                $satisFiyati = $this->getUrunSatisFiyati($row);
-                $info = $this->hesaplaMaliyetKarBilgisi($satisFiyati, $maliyet);
-                $formatted = $this->formatMaliyetKarBilgisi($info);
+                $magazaFiyati = UrunFiyatService::getUrunSatisFiyati($row, UrunFiyatService::TUR_MAGAZA);
+                $telefonFiyati = UrunFiyatService::getUrunSatisFiyati($row, UrunFiyatService::TUR_TELEFON);
+                $disPlatformFiyati = UrunFiyatService::getUrunSatisFiyati($row, UrunFiyatService::TUR_DIS_PLATFORM);
 
-                $row->MALIYET = $info['maliyet'];
-                $row->KAR = $info['kar'];
-                $row->KAR_MARJI = $info['kar_marji'];
+                $row->FIYAT_MAGAZA = $magazaFiyati;
+                $row->FIYAT_TELEFON = $telefonFiyati;
+                $row->FIYAT_DIS_PLATFORM = $disPlatformFiyati;
+                $row->MALIYET = $maliyet;
 
-                $row->MALIYET_TEXT = $formatted['maliyet_text'];
-                $row->KAR_TEXT = $formatted['kar_text'];
-                $row->KAR_MARJI_TEXT = $formatted['kar_marji_text'];
+                $row->FIYAT_MAGAZA_TEXT = FormatSayi::sayi($magazaFiyati) . ' ₺';
+                $row->FIYAT_TELEFON_TEXT = FormatSayi::sayi($telefonFiyati) . ' ₺';
+                $row->FIYAT_DIS_PLATFORM_TEXT = FormatSayi::sayi($disPlatformFiyati) . ' ₺';
+                $row->MALIYET_TEXT = $maliyet !== null ? FormatSayi::sayi($maliyet) . ' ₺' : '-';
             }
         }
 
@@ -384,19 +410,14 @@ class UrunController {
     }
 
     /**
-     * Resolves selling price for a product. Centralized for future multi-channel (Magaza, Telefon, Dis Platform) expansion.
+     * Resolves selling price for a product via UrunFiyatService.
      * 
-     * @param object|array $urun
+     * @param object|array|int $urun
      * @param string $fiyatTuru
      * @return float
      */
-    public function getUrunSatisFiyati($urun, $fiyatTuru = 'GENEL') {
-        if (is_object($urun)) {
-            return floatval($urun->FIYAT ?? 0);
-        } else if (is_array($urun)) {
-            return floatval($urun['FIYAT'] ?? 0);
-        }
-        return 0.0;
+    public function getUrunSatisFiyati($urun, $fiyatTuru = UrunFiyatService::TUR_MAGAZA) {
+        return UrunFiyatService::getUrunSatisFiyati($urun, $fiyatTuru);
     }
 
     /**
@@ -484,17 +505,19 @@ class UrunController {
 
         if ($row && $row->ID > 0) {
             $maliyet = UrunMaliyetService::getGuncelMaliyet($row->ID);
-            $satisFiyati = $this->getUrunSatisFiyati($row);
-            $info = $this->hesaplaMaliyetKarBilgisi($satisFiyati, $maliyet);
-            $formatted = $this->formatMaliyetKarBilgisi($info);
+            $magazaFiyati = UrunFiyatService::getUrunSatisFiyati($row, UrunFiyatService::TUR_MAGAZA);
+            $telefonFiyati = UrunFiyatService::getUrunSatisFiyati($row, UrunFiyatService::TUR_TELEFON);
+            $disPlatformFiyati = UrunFiyatService::getUrunSatisFiyati($row, UrunFiyatService::TUR_DIS_PLATFORM);
 
-            $row->ANLIK_MALIYET = $info['maliyet'];
-            $row->BRUT_KAR = $info['kar'];
-            $row->KAR_MARJI = $info['kar_marji'];
+            $row->FIYAT_MAGAZA = $magazaFiyati;
+            $row->FIYAT_TELEFON = $telefonFiyati;
+            $row->FIYAT_DIS_PLATFORM = $disPlatformFiyati;
+            $row->ANLIK_MALIYET = $maliyet;
 
-            $row->ANLIK_MALIYET_TEXT = $formatted['maliyet_text'];
-            $row->BRUT_KAR_TEXT = $formatted['kar_text'];
-            $row->KAR_MARJI_TEXT = $formatted['kar_marji_text'];
+            $row->FIYAT_MAGAZA_TEXT = FormatSayi::sayi($magazaFiyati) . ' ₺';
+            $row->FIYAT_TELEFON_TEXT = FormatSayi::sayi($telefonFiyati) . ' ₺';
+            $row->FIYAT_DIS_PLATFORM_TEXT = FormatSayi::sayi($disPlatformFiyati) . ' ₺';
+            $row->ANLIK_MALIYET_TEXT = $maliyet !== null ? FormatSayi::sayi($maliyet) . ' ₺' : '-';
         }
 
         return $row;
@@ -574,49 +597,28 @@ class UrunController {
                                 ACIKLAMA            = :ACIKLAMA,
                                 KATEGORI_ID         = :KATEGORI_ID,
                                 HAMUR_KULLANIM_ID   = :HAMUR_KULLANIM_ID,
-                                FIYAT               = :FIYAT,
                                 DURUM               = :DURUM,
                                 GTARIH              = NOW()
                             WHERE ID = :ID
                             ";
         $data[":URUN"]                  = trim($_REQUEST['urun']);
         $data[":ACIKLAMA"]              = trim($_REQUEST['aciklama']);
-        $data[":FIYAT"]                 = FormatSayi::sayi2db($_REQUEST['fiyat']);
         $data[":KATEGORI_ID"]           = $_REQUEST['kategori_id'];
         $data[":HAMUR_KULLANIM_ID"]     = $_REQUEST['hamur_kullanim_id'];
         $data[":DURUM"]                 = $_REQUEST['durum'];
         $data[":ID"]                    = $row->ID;
         $update = DB::exec($sql, $data);
 
-        if($row->FIYAT != FormatSayi::sayi2db($_REQUEST['fiyat'])){
-            $data = array();
-            $sql = "UPDATE URUN SET ESKI_FIYAT = :ESKI_FIYAT WHERE ID = :ID";
-            $data[":ESKI_FIYAT"]    = $row->FIYAT;
-            $data[":ID"]            = $row->ID;
-            DB::exec($sql, $data);
-
-            $data = array();
-            $sql = "INSERT INTO URUN_FIYAT_LOG SET  URUN_ID         = :URUN_ID,
-                                                    ESKI_FIYAT      = :ESKI_FIYAT,
-                                                    FIYAT           = :FIYAT,
-                                                    KAYIT_YAPAN_ID  = :KAYIT_YAPAN_ID
-                                                    ";
-            $data[":URUN_ID"]           = $row->ID;
-            $data[":ESKI_FIYAT"]        = $row->FIYAT;
-            $data[":FIYAT"]             = FormatSayi::sayi2db($_REQUEST['fiyat']);
-            $data[":KAYIT_YAPAN_ID"]    = $_SESSION['kullanici_id'];
-            $id = DB::insert($sql, $data);
+        // Save multi-channel prices via UrunFiyatService
+        $priceRes = UrunFiyatService::saveUrunSatisFiyatlari($row->ID, $_REQUEST, $_SESSION['kullanici_id'], "Ürün düzenlendi.");
+        if ($priceRes['HATA']) {
+            return $priceRes;
         }
-     
+
         fncIslemLog($row->ID, DB::getSQL($sql, $data), $row, __FUNCTION__, "URUN", "URUN_DUZENLE");
 
-        if($update > 0){
-            $result["HATA"]      = FALSE;
-            $result["ACIKLAMA"]  = "Kayıt Edildi.";
-        }else{
-            $result["HATA"]      = TRUE;
-            $result["ACIKLAMA"]  = "Hata Oluştu.";
-        }
+        $result["HATA"]      = FALSE;
+        $result["ACIKLAMA"]  = "Kayıt Edildi.";
 
         return $result;
     }
@@ -2345,6 +2347,19 @@ class UrunController {
         $data[":URUN_ID"]  = $request['urun_id'];
         $rows = DB::get($sql, $data);
         return $rows;
+    }
+
+    /**
+     * Controller Action: Returns full cost breakdown for product from UrunMaliyetService.
+     * Contains NO calculation logic in controller.
+     */
+    public function getMaliyetDetayi($request = null) {
+        if ($request === null) {
+            $request = $_REQUEST;
+        }
+        $urun_id = isset($request['urun_id']) ? intval($request['urun_id']) : (isset($request['id']) ? intval($request['id']) : 0);
+
+        return UrunMaliyetService::getMaliyetDetayi($urun_id);
     }
 
 }

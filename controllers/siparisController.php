@@ -855,7 +855,7 @@ class SiparisController {
 
         if (!empty($urun_ids)) {
             $placeholders = implode(',', array_fill(0, count($urun_ids), '?'));
-            $products = DB::get("SELECT ID, URUN, TRENDYOL_URUN_ID, FIYAT FROM URUN WHERE ID IN ($placeholders)", $urun_ids);
+            $products = DB::get("SELECT ID, URUN, TRENDYOL_URUN_ID, FIYAT_MAGAZA, FIYAT_TELEFON, FIYAT_DIS_PLATFORM FROM URUN WHERE ID IN ($placeholders)", $urun_ids);
             $products_index = array();
             foreach ($products as $p) {
                 $products_index[$p->ID] = $p;
@@ -871,7 +871,7 @@ class SiparisController {
                 }
                 
                 $p = $products_index[$prod_id];
-                $unit_price = floatval($p->FIYAT);
+                $unit_price = UrunFiyatService::getUrunSatisFiyati($p, UrunFiyatService::TUR_MAGAZA);
                 $total_price = $unit_price * $qty;
                 $subtotal += $total_price;
 

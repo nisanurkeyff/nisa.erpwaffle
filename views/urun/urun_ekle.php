@@ -47,12 +47,30 @@
                                                                 </div>
                                                             </div>
                                                         </div>
-                                                       <div class="col-md-6">
+                                                        <div class="col-md-4">
                                                             <div class="input-group input-group-merge">
                                                                 <span class="input-group-text">₺</span>
                                                                 <div class="form-floating form-floating-outline">
-                                                                    <input type="text" class="form-control decimal" id="fiyat" name="fiyat" value="<?=$_REQUEST['fiyat']?>" placeholder="6"/>
-                                                                    <label>Fiyat</label>
+                                                                    <input type="text" class="form-control decimal" id="fiyat_magaza" name="fiyat_magaza" value="<?=$_REQUEST['fiyat_magaza']?>" placeholder="0.00"/>
+                                                                    <label>Mağaza Satış Fiyatı</label>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-md-4">
+                                                            <div class="input-group input-group-merge">
+                                                                <span class="input-group-text">₺</span>
+                                                                <div class="form-floating form-floating-outline">
+                                                                    <input type="text" class="form-control decimal" id="fiyat_telefon" name="fiyat_telefon" value="<?=$_REQUEST['fiyat_telefon']?>" placeholder="0.00"/>
+                                                                    <label>Telefon Sipariş Fiyatı</label>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-md-4">
+                                                            <div class="input-group input-group-merge">
+                                                                <span class="input-group-text">₺</span>
+                                                                <div class="form-floating form-floating-outline">
+                                                                    <input type="text" class="form-control decimal" id="fiyat_dis_platform" name="fiyat_dis_platform" value="<?=$_REQUEST['fiyat_dis_platform']?>" placeholder="0.00"/>
+                                                                    <label>Dış Platform Satış Fiyatı</label>
                                                                 </div>
                                                             </div>
                                                         </div>
