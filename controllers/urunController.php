@@ -1932,6 +1932,7 @@ class UrunController {
         $temel_birim_id    = intval($_REQUEST['temel_birim_id']) > 0 ? intval($_REQUEST['temel_birim_id']) : NULL;
         $malzeme_tipi_id   = intval($_REQUEST['malzeme_tipi_id']) > 0 ? intval($_REQUEST['malzeme_tipi_id']) : NULL;
         $stok_takip        = isset($_REQUEST['stok_takip']) ? intval($_REQUEST['stok_takip']) : 1;
+        $recetede_goster   = isset($_REQUEST['recetede_goster']) ? intval($_REQUEST['recetede_goster']) : 1;
         $min_stok_seviyesi = (strlen(trim($_REQUEST['min_stok_seviyesi'])) > 0) ? FormatSayi::sayi2db($_REQUEST['min_stok_seviyesi']) : NULL;
 
         $data = array();
@@ -1946,6 +1947,7 @@ class UrunController {
                                         EKSTRA_FIYAT    = :EKSTRA_FIYAT,
                                         EKSTRA          = :EKSTRA,
                                         DURUM           = :DURUM,
+                                        RECETEDE_GOSTER = :RECETEDE_GOSTER,
                                         ONCELIK         = 1,
                                         KAYIT_YAPAN_ID  = :KAYIT_YAPAN_ID,
                                         TOKEN           = MD5(NOW())
@@ -1955,6 +1957,7 @@ class UrunController {
         $data[":TEMEL_BIRIM_ID"]    = $temel_birim_id;
         $data[":MALZEME_TIPI_ID"]   = $malzeme_tipi_id;
         $data[":STOK_TAKIP"]        = $stok_takip;
+        $data[":RECETEDE_GOSTER"]   = $recetede_goster;
         $data[":MIN_STOK_SEVIYESI"] = $min_stok_seviyesi;
         $data[":ACIKLAMA"]          = trim($_REQUEST['aciklama']);
         $data[":FIYAT"]             = FormatSayi::sayi2db($_REQUEST['fiyat']);
@@ -2016,6 +2019,7 @@ class UrunController {
         $temel_birim_id    = intval($_REQUEST['temel_birim_id']) > 0 ? intval($_REQUEST['temel_birim_id']) : NULL;
         $malzeme_tipi_id   = intval($_REQUEST['malzeme_tipi_id']) > 0 ? intval($_REQUEST['malzeme_tipi_id']) : NULL;
         $stok_takip        = isset($_REQUEST['stok_takip']) ? intval($_REQUEST['stok_takip']) : 1;
+        $recetede_goster   = isset($_REQUEST['recetede_goster']) ? intval($_REQUEST['recetede_goster']) : 1;
         $min_stok_seviyesi = (strlen(trim($_REQUEST['min_stok_seviyesi'])) > 0) ? FormatSayi::sayi2db($_REQUEST['min_stok_seviyesi']) : NULL;
 
         $data = array();
@@ -2030,6 +2034,7 @@ class UrunController {
                                     EKSTRA_FIYAT    = :EKSTRA_FIYAT,
                                     EKSTRA          = :EKSTRA,
                                     DURUM           = :DURUM,
+                                    RECETEDE_GOSTER = :RECETEDE_GOSTER,
                                     GTARIH          = NOW()
                                 WHERE ID = :ID
                                 ";
@@ -2038,6 +2043,7 @@ class UrunController {
         $data[":TEMEL_BIRIM_ID"]    = $temel_birim_id;
         $data[":MALZEME_TIPI_ID"]   = $malzeme_tipi_id;
         $data[":STOK_TAKIP"]        = $stok_takip;
+        $data[":RECETEDE_GOSTER"]   = $recetede_goster;
         $data[":MIN_STOK_SEVIYESI"] = $min_stok_seviyesi;
         $data[":ACIKLAMA"]          = trim($_REQUEST['aciklama']);
         $data[":FIYAT"]             = FormatSayi::sayi2db($_REQUEST['fiyat']);
@@ -2169,7 +2175,7 @@ class UrunController {
                     B.HASSASIYET AS BIRIM_HASSASIYET
                 FROM MALZEME AS M
                     LEFT JOIN BIRIM AS B ON B.ID = M.TEMEL_BIRIM_ID
-                WHERE M.DURUM = 1
+                WHERE M.DURUM = 1 AND M.RECETEDE_GOSTER = 1
                 ORDER BY M.MALZEME ASC
                 ";
         $row = DB::get($sql, $data);

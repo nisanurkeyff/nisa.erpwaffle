@@ -122,6 +122,7 @@
                                                     <td nowrap>Ekstra Fiyat</td>
                                                     <td nowrap align="center">Stok Takip</td>
                                                     <td nowrap align="center">Ekstra</td>
+                                                    <td nowrap align="center">Reçete</td>
                                                     <td nowrap align="center">Durum</td>
                                                     <td nowrap></td>
                                                 </tr>
@@ -137,6 +138,7 @@
                                                         <td><?=FormatSayi::sayi($row->EKSTRA_FIYAT,2)?> ₺</td>
                                                         <td align="center"><?=($row->STOK_TAKIP == '1') ? '<span class="badge bg-label-success">Takip Var</span>' : '<span class="badge bg-label-warning">Takip Yok</span>'?></td>
                                                         <td align="center"><?=($row->EKSTRA == '1') ? '✅' : '❌'?></td>
+                                                        <td align="center"><?=($row->RECETEDE_GOSTER == '1') ? '✅' : '❌'?></td>
                                                         <td align="center"><?=fncDurumSpan($row->DURUM)?></td>
                                                         <td nowrap>
                                                             <a href="/views/urun/malzeme_duzenle.php?route=urun/malzeme_listesi&id=<?=$row->ID?>&token=<?=$row->TOKEN?>" data-bs-toggle="tooltip" class="btn btn-primary btn-icon btn-sm" title="Düzenle"> <i class="ri-pencil-line"></i></a>

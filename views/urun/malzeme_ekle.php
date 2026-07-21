@@ -111,6 +111,15 @@
                                                         </div>
                                                         <div class="col-md-6">
                                                             <div class="form-floating form-floating-outline">
+                                                                <select name="recetede_goster" id="recetede_goster" class="select2 form-select" data-style="btn-default">
+                                                                    <option value="1" selected>✅ Evet</option>
+                                                                    <option value="0">❌ Hayır</option>
+                                                                </select>
+                                                                <label>Reçetede Kullanılabilir</label>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <div class="form-floating form-floating-outline">
                                                                 <select name="durum" id="durum" class="select2 form-select" data-style="btn-default">
                                                                     <?=$cKullanici->Durum()->setSecilen($_REQUEST['durum'])->getSelect("ID", "AD")?>
                                                                 </select>

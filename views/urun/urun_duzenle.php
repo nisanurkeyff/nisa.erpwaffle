@@ -202,9 +202,28 @@
                                                             </div>
                                                         </div>
 
+                                                        <div class="col-md-10 offset-1 mb-2">
+                                                            <div class="row align-items-center g-3">
+                                                                <div class="col-md-6 col-sm-12">
+                                                                    <div class="input-group input-group-merge">
+                                                                        <span class="input-group-text"><i class="ri-search-line"></i></span>
+                                                                        <div class="form-floating form-floating-outline">
+                                                                            <input type="text" id="malzemeAra" class="form-control" placeholder="Malzeme Ara...">
+                                                                            <label for="malzemeAra">Malzeme Ara...</label>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="col-md-6 col-sm-12 text-md-end text-start">
+                                                                    <span id="malzemeSayac" class="badge bg-label-primary fs-7 px-3 py-2">
+                                                                        <!-- Canlı sayaç JS ile güncellenecek -->
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
                                                         <div class="col-md-10 offset-1">
                                                             <div class="table-responsive">
-                                                                <table class="table table-hover align-middle">
+                                                                <table class="table table-hover align-middle" id="receteMalzemeTablosu">
                                                                     <thead class="table-light">
                                                                         <tr>
                                                                             <th>Malzeme</th>
@@ -214,7 +233,7 @@
                                                                     </thead>
                                                                     <tbody>
                                                                         <?foreach ($rows_malzeme as $row_malzeme) { ?>
-                                                                            <tr>
+                                                                            <tr class="recete-malzeme-row" data-malzeme-adi="<?=htmlspecialchars($row_malzeme->MALZEME, ENT_QUOTES, 'UTF-8')?>">
                                                                                 <td>
                                                                                     <strong><?=$row_malzeme->MALZEME?></strong>
                                                                                     <?if($row_malzeme->BIRIM_KISA_ADI){?>
@@ -495,6 +514,59 @@
                 }
             }
         });
+    });
+
+    $(document).ready(function() {
+        function normalizeTurkish(str) {
+            if (!str) return '';
+            return str.toString()
+                .replace(/İ/g, 'i')
+                .replace(/I/g, 'i')
+                .replace(/ı/g, 'i')
+                .replace(/Ş/g, 's')
+                .replace(/Ğ/g, 'g')
+                .replace(/Ü/g, 'u')
+                .replace(/Ö/g, 'o')
+                .replace(/Ç/g, 'c')
+                .replace(/ş/g, 's')
+                .replace(/ğ/g, 'g')
+                .replace(/ü/g, 'u')
+                .replace(/ö/g, 'o')
+                .replace(/ç/g, 'c')
+                .toLowerCase();
+        }
+
+        function filterReceteMalzemeleri() {
+            var searchText = normalizeTurkish($("#malzemeAra").val()).trim();
+            var totalRows = 0;
+            var visibleRows = 0;
+
+            $(".recete-malzeme-row").each(function() {
+                var malzemeAdi = $(this).data("malzeme-adi");
+                var normalizedName = normalizeTurkish(malzemeAdi);
+                totalRows++;
+                if (searchText === "" || normalizedName.indexOf(searchText) > -1) {
+                    $(this).show();
+                    visibleRows++;
+                } else {
+                    $(this).hide();
+                }
+            });
+
+            if (searchText === "") {
+                $("#malzemeSayac").html("<strong>" + totalRows + "</strong> malzeme listeleniyor");
+            } else {
+                $("#malzemeSayac").html("<strong>" + visibleRows + "</strong> / <strong>" + totalRows + "</strong> malzeme");
+            }
+        }
+
+        $(document).on("keyup input change", "#malzemeAra", function() {
+            filterReceteMalzemeleri();
+        });
+
+        if ($("#malzemeAra").length) {
+            filterReceteMalzemeleri();
+        }
     });
 </script>
 </body>
