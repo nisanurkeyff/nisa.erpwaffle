@@ -16,7 +16,10 @@ class UrunMaliyetService {
 
         $bugun = date("Y-m-d");
 
-        $sql = "SELECT * FROM URUN WHERE ID = :URUN_ID AND DURUM = 1";
+        $sql = "SELECT U.*, HK.KATSAYI, HK.DURUM AS HAMUR_KULLANIM_DURUM 
+                FROM URUN AS U 
+                LEFT JOIN HAMUR_KULLANIM AS HK ON HK.ID = U.HAMUR_KULLANIM_ID 
+                WHERE U.ID = :URUN_ID AND U.DURUM = 1";
         $row_urun = DB::getRow($sql, [':URUN_ID' => $urun_id]);
 
         if (!$row_urun || !$row_urun->ID) {
@@ -72,11 +75,7 @@ class UrunMaliyetService {
 
         $genel_maliyet = $toplam_maliyet;
 
-        if (in_array($row_urun->KATEGORI_ID, array(1, 2))) { // Waffle, Bowl
-            $genel_maliyet = $toplam_maliyet + $hamur_maliyet;
-        } else if (in_array($row_urun->KATEGORI_ID, array(3))) { // Bardak
-            $genel_maliyet = $toplam_maliyet + ($hamur_maliyet / 2);
-        } else if (in_array($row_urun->KATEGORI_ID, array(6))) { // Kruvasan
+        if (in_array($row_urun->KATEGORI_ID, array(6))) { // Kruvasan
             $genel_maliyet = $toplam_maliyet + $kruvasan_maliyet;
         } else if (in_array($row_urun->KATEGORI_ID, array(4))) { // İçecek
             $sql = "SELECT MAD.BIRIM_FIYAT
@@ -96,6 +95,13 @@ class UrunMaliyetService {
                     $genel_maliyet = floatval($row_m_icecek->FIYAT);
                 }
             }
+        } else {
+            // Dynamic Dough Cost = Tam Hamur Maliyeti * KATSAYI
+            $katsayi = ($row_urun->HAMUR_KULLANIM_ID > 0 && $row_urun->HAMUR_KULLANIM_DURUM == 1 && $row_urun->KATSAYI !== null) 
+                       ? floatval($row_urun->KATSAYI) 
+                       : 1.00;
+            $hamur_hesaplanan_maliyet = $hamur_maliyet * $katsayi;
+            $genel_maliyet = $toplam_maliyet + $hamur_hesaplanan_maliyet;
         }
 
         // Save or update in URUN_MALIYET table
@@ -187,4 +193,61 @@ class UrunMaliyetService {
         }
         return $count;
     }
+
+    /**
+     * Fetches the latest cost for a single product from URUN_MALIYET table.
+     * 
+     * @param int $urun_id
+     * @return float|null
+     */
+    public static function getGuncelMaliyet($urun_id) {
+        $urun_id = intval($urun_id);
+        if ($urun_id <= 0) {
+            return null;
+        }
+
+        $sql = "SELECT MALIYET FROM URUN_MALIYET WHERE URUN_ID = :URUN_ID ORDER BY MALIYET_TARIH DESC, ID DESC LIMIT 1";
+        $row = DB::getRow($sql, [':URUN_ID' => $urun_id]);
+
+        return ($row && $row->MALIYET !== null) ? floatval($row->MALIYET) : null;
+    }
+
+    /**
+     * Fetches the latest costs for multiple products in a single SQL query (avoids N+1 queries).
+     * 
+     * @param array $urun_ids Optional list of product IDs. If empty, retrieves latest cost for all products.
+     * @return array Map of urun_id => float|null
+     */
+    public static function getGuncelMaliyetler(array $urun_ids = array()) {
+        $urun_ids = array_filter(array_map('intval', $urun_ids));
+        
+        $where = "";
+        $params = array();
+        if (!empty($urun_ids)) {
+            $placeholders = implode(',', array_fill(0, count($urun_ids), '?'));
+            $where = "WHERE URUN_ID IN ($placeholders)";
+            $params = array_values($urun_ids);
+        }
+
+        $sql = "SELECT UM.URUN_ID, UM.MALIYET 
+                FROM URUN_MALIYET AS UM
+                INNER JOIN (
+                    SELECT URUN_ID, MAX(ID) AS MAX_ID 
+                    FROM URUN_MALIYET 
+                    $where 
+                    GROUP BY URUN_ID
+                ) AS LATEST ON UM.ID = LATEST.MAX_ID";
+
+        $rows = DB::get($sql, $params);
+        $result = array();
+
+        if ($rows) {
+            foreach ($rows as $r) {
+                $result[$r->URUN_ID] = ($r->MALIYET !== null) ? floatval($r->MALIYET) : null;
+            }
+        }
+
+        return $result;
+    }
 }
+

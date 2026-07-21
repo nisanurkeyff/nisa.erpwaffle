@@ -94,6 +94,33 @@
                                                                 </div>
                                                             </div>
                                                         </div>
+                                                        <div class="col-md-4">
+                                                            <div class="input-group input-group-merge">
+                                                                <span class="input-group-text"><i class="ri-money-dollar-circle-line"></i></span>
+                                                                <div class="form-floating form-floating-outline">
+                                                                    <input type="text" class="form-control" id="anlik_maliyet" value="<?=$row->ANLIK_MALIYET_TEXT?>" readonly>
+                                                                    <label for="anlik_maliyet">Anlık Ürün Maliyeti</label>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-md-4">
+                                                            <div class="input-group input-group-merge">
+                                                                <span class="input-group-text"><i class="ri-coin-line"></i></span>
+                                                                <div class="form-floating form-floating-outline">
+                                                                    <input type="text" class="form-control" id="brut_kar" value="<?=$row->BRUT_KAR_TEXT?>" readonly>
+                                                                    <label for="brut_kar">Brüt Kâr</label>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-md-4">
+                                                            <div class="input-group input-group-merge">
+                                                                <span class="input-group-text"><i class="ri-percent-line"></i></span>
+                                                                <div class="form-floating form-floating-outline">
+                                                                    <input type="text" class="form-control" id="kar_marji" value="<?=$row->KAR_MARJI_TEXT?>" readonly>
+                                                                    <label for="kar_marji">Kâr Marjı</label>
+                                                                </div>
+                                                            </div>
+                                                        </div>
                                                         <div class="col-md-6">
                                                             <div class="form-floating form-floating-outline">
                                                                 <select name="hamur_kullanim_id" id="hamur_kullanim_id" class="select2 form-select" data-style="btn-default">

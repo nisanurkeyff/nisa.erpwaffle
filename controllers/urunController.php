@@ -231,7 +231,7 @@ class UrunController {
                     HK.HAMUR_KULLANIM AS AD
                 FROM HAMUR_KULLANIM AS HK
                 WHERE HK.DURUM = 1
-                ORDER BY 2";
+                ORDER BY HK.KATSAYI ASC";
 
         $rows = DB::get($sql, $data);
         $this->select->setTemizle();
@@ -354,12 +354,98 @@ class UrunController {
         $sql .= $sayfalama->getLimitOffset();
         $rows = DB::get($sql, $data);
 
+        if ($rows) {
+            $urun_ids = array_map(function($r) { return $r->ID; }, $rows);
+            $maliyetler = UrunMaliyetService::getGuncelMaliyetler($urun_ids);
+
+            foreach ($rows as $row) {
+                $maliyet = isset($maliyetler[$row->ID]) ? $maliyetler[$row->ID] : null;
+                $satisFiyati = $this->getUrunSatisFiyati($row);
+                $info = $this->hesaplaMaliyetKarBilgisi($satisFiyati, $maliyet);
+                $formatted = $this->formatMaliyetKarBilgisi($info);
+
+                $row->MALIYET = $info['maliyet'];
+                $row->KAR = $info['kar'];
+                $row->KAR_MARJI = $info['kar_marji'];
+
+                $row->MALIYET_TEXT = $formatted['maliyet_text'];
+                $row->KAR_TEXT = $formatted['kar_text'];
+                $row->KAR_MARJI_TEXT = $formatted['kar_marji_text'];
+            }
+        }
+
         return [
             'rows' => $rows,
             'sayfalama' => $sayfalama,
             'limit' => $sayfalama->getLimitOffset(),
             'excel_sql' => $excel_sql,
             'sayfa_araligi' => $sayfalama->getGorunumAraligi()
+        ];
+    }
+
+    /**
+     * Resolves selling price for a product. Centralized for future multi-channel (Magaza, Telefon, Dis Platform) expansion.
+     * 
+     * @param object|array $urun
+     * @param string $fiyatTuru
+     * @return float
+     */
+    public function getUrunSatisFiyati($urun, $fiyatTuru = 'GENEL') {
+        if (is_object($urun)) {
+            return floatval($urun->FIYAT ?? 0);
+        } else if (is_array($urun)) {
+            return floatval($urun['FIYAT'] ?? 0);
+        }
+        return 0.0;
+    }
+
+    /**
+     * Calculates raw cost, gross profit, and profit margin values.
+     * 
+     * @param float $satisFiyati
+     * @param float|null $maliyet
+     * @return array
+     */
+    public function hesaplaMaliyetKarBilgisi($satisFiyati, $maliyet) {
+        if ($maliyet === null) {
+            return [
+                'maliyet'   => null,
+                'kar'       => null,
+                'kar_marji' => null
+            ];
+        }
+
+        $maliyet = floatval($maliyet);
+        $satisFiyati = floatval($satisFiyati);
+        $kar = $satisFiyati - $maliyet;
+        $kar_marji = $satisFiyati > 0 ? ($kar / $satisFiyati) * 100 : 0.0;
+
+        return [
+            'maliyet'   => $maliyet,
+            'kar'       => $kar,
+            'kar_marji' => $kar_marji
+        ];
+    }
+
+    /**
+     * Formats raw cost, profit, and margin into display strings.
+     * 
+     * @param array $info
+     * @return array
+     */
+    public function formatMaliyetKarBilgisi(array $info) {
+        if ($info['maliyet'] === null) {
+            return [
+                'maliyet_text'   => "Henüz hesaplanmadı",
+                'kar_text'       => "Henüz hesaplanmadı",
+                'kar_marji_text' => "Henüz hesaplanmadı"
+            ];
+        }
+
+        return [
+            'maliyet_text'   => number_format($info['maliyet'], 2, ',', '.') . ' ₺',
+            'kar_text'       => number_format($info['kar'], 2, ',', '.') . ' ₺',
+            'kar_marji_text' => '%' . number_format($info['kar_marji'], 2, ',', '.')
         ];
     }
 
@@ -395,6 +481,22 @@ class UrunController {
 
         $data[':ID'] = $request['id'];
         $row = DB::getRow($sql, $data);
+
+        if ($row && $row->ID > 0) {
+            $maliyet = UrunMaliyetService::getGuncelMaliyet($row->ID);
+            $satisFiyati = $this->getUrunSatisFiyati($row);
+            $info = $this->hesaplaMaliyetKarBilgisi($satisFiyati, $maliyet);
+            $formatted = $this->formatMaliyetKarBilgisi($info);
+
+            $row->ANLIK_MALIYET = $info['maliyet'];
+            $row->BRUT_KAR = $info['kar'];
+            $row->KAR_MARJI = $info['kar_marji'];
+
+            $row->ANLIK_MALIYET_TEXT = $formatted['maliyet_text'];
+            $row->BRUT_KAR_TEXT = $formatted['kar_text'];
+            $row->KAR_MARJI_TEXT = $formatted['kar_marji_text'];
+        }
+
         return $row;
     }
 
