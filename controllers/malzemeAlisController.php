@@ -338,6 +338,8 @@ class MalzemeAlisController
                 UrunMaliyetService::hesaplaMalzemeIleIlgiliUrunMaliyetleri($etkilenen_malzeme_idleri);
             }
 
+            $this->syncFinansHareketi($id);
+
             $result["HATA"] = FALSE;
             $result["ACIKLAMA"] = "Alış Kaydedildi.";
             $result["ID"] = $id;
@@ -384,6 +386,8 @@ class MalzemeAlisController
                 UrunMaliyetService::hesaplaMalzemeIleIlgiliUrunMaliyetleri($etkilenen_ids);
             }
 
+            $this->syncFinansHareketi($row->ID);
+
             $result["HATA"] = FALSE;
             $result["ACIKLAMA"] = "Silindi.";
         }
@@ -414,6 +418,8 @@ class MalzemeAlisController
         $update = DB::exec($sql, $data);
 
         if ($update > 0) {
+            $this->syncFinansHareketi($row->ID);
+
             $result["HATA"] = FALSE;
             $result["ACIKLAMA"] = "Ödeme Yapıldı.";
         }
@@ -444,6 +450,8 @@ class MalzemeAlisController
         $update = DB::exec($sql, $data);
 
         if ($update > 0) {
+            $this->syncFinansHareketi($row->ID);
+
             $result["HATA"] = FALSE;
             $result["ACIKLAMA"] = "Ödeme Reddedildi.";
         }
@@ -453,5 +461,82 @@ class MalzemeAlisController
         }
 
         return $result;
+    }
+
+    private function syncFinansHareketi($alis_id) {
+        $sql = "SELECT * FROM MALZEME_ALIS WHERE ID = :ID";
+        $alis = DB::getRow($sql, [':ID' => $alis_id]);
+        if (!$alis) return;
+
+        // Find the category ID for "Malzeme Alışı" (TIP = 'GIDER')
+        $sql_kat = "SELECT ID FROM GELIR_GIDER_KATEGORI WHERE KATEGORI = 'Malzeme Alışı' AND TIP = 'GIDER' AND DURUM = 1 LIMIT 1";
+        $kat_id = DB::getVar($sql_kat);
+        if (!$kat_id) {
+            $sql_ins_kat = "INSERT INTO GELIR_GIDER_KATEGORI SET KATEGORI = 'Malzeme Alışı', TIP = 'GIDER', ICON = 'ri-shopping-basket-2-line', DURUM = 1";
+            $kat_id = DB::insert($sql_ins_kat);
+        }
+
+        // Map ODEME_DURUM_ID to HAREKET_DURUMU
+        // 1 -> BEKLIYOR, 2 -> TAMAMLANDI, 3 -> IPTAL
+        $hareket_durumu = 'BEKLIYOR';
+        if ($alis->ODEME_DURUM_ID == 2) {
+            $hareket_durumu = 'TAMAMLANDI';
+        } elseif ($alis->ODEME_DURUM_ID == 3) {
+            $hareket_durumu = 'IPTAL';
+        }
+
+        // Check if GELIR_GIDER record exists for this purchase
+        $sql_check = "SELECT ID, DURUM FROM GELIR_GIDER WHERE ISLEM_KAYNAGI_ID = 2 AND KAYNAK_ID = :KAYNAK_ID LIMIT 1";
+        $gg_row = DB::getRow($sql_check, [':KAYNAK_ID' => $alis_id]);
+
+        $data = [
+            ':TIP'              => 'GIDER',
+            ':HAREKET_DURUMU'   => $hareket_durumu,
+            ':CARI_ID'          => $alis->CARI_ID,
+            ':KATEGORI_ID'      => $kat_id,
+            ':TUTAR'            => $alis->TOPLAM_TUTAR,
+            ':FATURA_NO'        => $alis->FATURA_NO,
+            ':FATURA_TARIH'     => $alis->FATURA_TARIH,
+            ':ACIKLAMA'         => "Malzeme Alış Fişi: " . $alis->FIS_NO . ($alis->ACIKLAMA ? " - " . $alis->ACIKLAMA : ""),
+            ':ODEME_TARIHI'     => $alis->ODEME_TARIHI,
+            ':DURUM'            => $alis->DURUM
+        ];
+
+        if ($gg_row) {
+            // Update existing record
+            $sql_gg = "UPDATE GELIR_GIDER SET 
+                            TIP             = :TIP,
+                            HAREKET_DURUMU  = :HAREKET_DURUMU,
+                            CARI_ID         = :CARI_ID,
+                            KATEGORI_ID     = :KATEGORI_ID,
+                            TUTAR           = :TUTAR,
+                            FATURA_NO       = :FATURA_NO,
+                            FATURA_TARIH    = :FATURA_TARIH,
+                            ACIKLAMA        = :ACIKLAMA,
+                            ODEME_TARIHI    = :ODEME_TARIHI,
+                            DURUM           = :DURUM
+                        WHERE ID = :ID";
+            $data[':ID'] = $gg_row->ID;
+            DB::exec($sql_gg, $data);
+        } else {
+            // Insert new record (ISLEM_KAYNAGI_ID = 2 refers to MALZEME_ALISI)
+            $sql_gg = "INSERT INTO GELIR_GIDER SET 
+                            TIP             = :TIP,
+                            HAREKET_DURUMU  = :HAREKET_DURUMU,
+                            CARI_ID         = :CARI_ID,
+                            KATEGORI_ID     = :KATEGORI_ID,
+                            ISLEM_KAYNAGI_ID= 2,
+                            KAYNAK_ID       = :KAYNAK_ID,
+                            TUTAR           = :TUTAR,
+                            FATURA_NO       = :FATURA_NO,
+                            FATURA_TARIH    = :FATURA_TARIH,
+                            ACIKLAMA        = :ACIKLAMA,
+                            ODEME_TARIHI    = :ODEME_TARIHI,
+                            KAYIT_YAPAN_ID  = :KAYIT_YAPAN_ID,
+                            DURUM           = :DURUM";
+            $data[':KAYNAK_ID']      = $alis_id;
+            $data[':KAYIT_YAPAN_ID'] = $alis->KAYIT_YAPAN_ID;
+            DB::insert($sql_gg, $data);
+        }
     }
 }
